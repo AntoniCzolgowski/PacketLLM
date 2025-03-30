@@ -15,50 +15,55 @@ generate_conversation_id <- function() {
 
 #' Inicjalizacja menedżera historii
 #'
-#' Tworzy pierwszą, pustą konwersację i ustawia ją jako aktywną.
-#' Wywoływana na starcie serwera gadżetu.
-#' @return ID nowo utworzonej, aktywnej konwersacji.
+#' Tworzy pierwszą konwersację. Wywoływana na starcie serwera gadżetu.
+#' @return ID nowo utworzonej, pierwszej konwersacji.
 initialize_history_manager <- function() {
   message("Inicjalizuję menedżera historii...")
   .history_env$conversations <- list()
   .history_env$active_conversation_id <- NULL
   .history_env$conversation_counter <- 0
-  new_id <- create_new_conversation(activate = TRUE, add_initial_system_msg = TRUE)
-  message(paste("Menedżer historii zainicjalizowany. Aktywna rozmowa:", new_id))
-  return(new_id)
+  first_id <- create_new_conversation(activate = FALSE, add_initial_settings = TRUE) # Zmieniono flagę
+  message(paste("Menedżer historii zainicjalizowany. Utworzono pierwszą rozmowę:", first_id))
+  return(first_id)
 }
 
 #' Tworzenie nowej konwersacji
 #'
-#' Tworzy nowy obiekt konwersacji, dodaje go do listy i opcjonalnie ustawia jako aktywny.
+#' Tworzy nowy obiekt konwersacji z domyślnymi ustawieniami zaawansowanymi.
 #'
-#' @param activate Czy ustawić nową konwersację jako aktywną? (Domyślnie TRUE)
-#' @param add_initial_system_msg Czy dodać domyślny komunikat systemowy? (Domyślnie TRUE)
+#' @param activate Czy ustawić nową konwersację jako aktywną? (Domyślnie FALSE)
+#' @param add_initial_settings Czy dodać domyślny komunikat systemowy i temperaturę? (Domyślnie TRUE) # Zmieniono nazwę flagi
 #' @param title Początkowy tytuł konwersacji (Domyślnie "Nowa rozmowa [czas]")
 #' @return ID nowo utworzonej konwersacji.
 #' @export
-create_new_conversation <- function(activate = TRUE, add_initial_system_msg = TRUE, title = NULL) {
+create_new_conversation <- function(activate = FALSE, add_initial_settings = TRUE, title = NULL) {
   conv_id <- generate_conversation_id()
   if (is.null(title)) {
-    title <- paste("Nowa rozmowa", format(Sys.time(), "%H:%M:%S"))
+    title <- paste("Rozmowa", format(Sys.time(), "%H:%M:%S"))
   }
   message(paste("Tworzę nową konwersację o ID:", conv_id, "i tytule:", title))
+
+  # Domyślne wartości
+  default_system_message <- "Jesteś pomocnym asystentem. Odpowiadaj w sposób czytelny i precyzyjny, zachowując formatowanie kodu, gdy jest to wymagane."
+  default_temperature <- 0.5
 
   new_conv <- list(
     id = conv_id,
     title = title,
     history = list(),
-    attachments = list(), # Lista załączników dla tej konwersacji
-    created_at = Sys.time()
+    attachments = list(),
+    created_at = Sys.time(),
+    # ZMIANA: Dodanie pól dla ustawień zaawansowanych
+    temperature = default_temperature,
+    system_message = "" # Inicjalizuj puste, jeśli nie dodajemy od razu
   )
 
-  if (add_initial_system_msg) {
-    default_system_message <- "Jesteś pomocnym asystentem. Odpowiadaj w sposób czytelny i precyzyjny, zachowując formatowanie kodu, gdy jest to wymagane."
-    new_conv$history <- list(list(role = "system", content = default_system_message))
-    message(paste("Dodano domyślny komunikat systemowy do rozmowy", conv_id))
+  if (add_initial_settings) {
+    new_conv$history <- list(list(role = "system", content = default_system_message)) # Komunikat systemowy idzie do historii TYLKO RAZ przy tworzeniu
+    new_conv$system_message <- default_system_message # Przechowujemy edytowalną wersję osobno
+    message(paste("Dodano domyślny komunikat systemowy i temperaturę do rozmowy", conv_id))
   }
 
-  # Bezpośrednie przypisanie nowego obiektu do listy w środowisku
   .history_env$conversations[[conv_id]] <- new_conv
 
   if (activate) {
@@ -67,22 +72,52 @@ create_new_conversation <- function(activate = TRUE, add_initial_system_msg = TR
   return(conv_id)
 }
 
-#' Ustawianie aktywnej konwersacji
+#' Usuwanie konwersacji
 #'
+#' Usuwa konwersację o podanym ID.
+#'
+#' @param id ID konwersacji do usunięcia.
+#' @return TRUE jeśli usunięto, FALSE jeśli ID nie istniało.
+#' @export
+delete_conversation <- function(id) {
+  if (!id %in% names(.history_env$conversations)) {
+    warning("Próba usunięcia nieistniejącej konwersacji o ID: ", id)
+    return(FALSE)
+  }
+  message(paste("Usuwam konwersację o ID:", id))
+  .history_env$conversations[[id]] <- NULL
+
+  if (!is.null(.history_env$active_conversation_id) && .history_env$active_conversation_id == id) {
+    message("Usunięto aktywną konwersację. Resetuję active_conversation_id.")
+    .history_env$active_conversation_id <- NULL
+  }
+  return(TRUE)
+}
+
+
+#' Ustawianie aktywnej konwersacji
 #' @param id ID konwersacji do aktywacji.
-#' @return Invisible NULL. Zgłasza błąd, jeśli ID nie istnieje.
+#' @return Invisible NULL.
 #' @export
 set_active_conversation <- function(id) {
-  if (!id %in% names(.history_env$conversations)) {
-    stop("Nie znaleziono konwersacji o ID: ", id)
+  if (is.null(id)) {
+    # message("Ustawiono aktywną konwersację na NULL") # Mniej gadatliwe logowanie
+    .history_env$active_conversation_id <- NULL
+    return(invisible(NULL))
   }
-  .history_env$active_conversation_id <- id
-  message(paste("Ustawiono aktywną konwersację na:", id))
+  if (!id %in% names(.history_env$conversations)) {
+    warning("Próba ustawienia nieistniejącej konwersacji jako aktywnej: ", id)
+    return(invisible(NULL))
+  }
+  if (is.null(.history_env$active_conversation_id) || .history_env$active_conversation_id != id) {
+    # message(paste("Ustawiono aktywną konwersację na:", id)) # Mniej gadatliwe logowanie
+    .history_env$active_conversation_id <- id
+  }
   invisible(NULL)
 }
 
 #' Pobieranie ID aktywnej konwersacji
-#' @return ID aktywnej konwersacji lub NULL, jeśli żadna nie jest aktywna.
+#' @return ID aktywnej konwersacji lub NULL.
 #' @export
 get_active_conversation_id <- function() {
   .history_env$active_conversation_id
@@ -94,10 +129,8 @@ get_active_conversation_id <- function() {
 get_active_conversation <- function() {
   active_id <- get_active_conversation_id()
   if (is.null(active_id) || !active_id %in% names(.history_env$conversations)) {
-    message("Ostrzeżenie: Brak aktywnej konwersacji lub ID nie istnieje w get_active_conversation()")
     return(NULL)
   }
-  # Zwracamy obiekt bezpośrednio z listy środowiska
   return(.history_env$conversations[[active_id]])
 }
 
@@ -106,99 +139,67 @@ get_active_conversation <- function() {
 #' @export
 get_active_chat_history <- function() {
   active_conv <- get_active_conversation()
-  if (is.null(active_conv)) {
-    message("Ostrzeżenie: Brak aktywnej konwersacji w get_active_chat_history()")
-    return(list())
-  }
-  # Używamy %||% dla bezpieczeństwa, gdyby pole $history nie istniało
+  if (is.null(active_conv)) return(list())
   return(active_conv$history %||% list())
 }
 
 #' Dodawanie wiadomości do historii aktywnej konwersacji
 #'
-#' !! ZMIANA: Pobiera obiekt konwersacji, modyfikuje go i zapisuje z powrotem !!
+#' Aktualizuje tytuł, jeśli to pierwsza wiadomość użytkownika.
 #'
 #' @param role Rola ("user", "assistant", "system").
 #' @param content Treść wiadomości.
-#' @return Invisible NULL. Zgłasza błąd, jeśli żadna konwersacja nie jest aktywna.
+#' @return Nowy tytuł konwersacji (string) jeśli został zaktualizowany, w przeciwnym razie NULL.
 #' @export
 add_message_to_active_history <- function(role, content) {
   active_id <- get_active_conversation_id()
-  if (is.null(active_id)) {
-    stop("Nie można dodać wiadomości, żadna konwersacja nie jest aktywna.")
-  }
-  if (!active_id %in% names(.history_env$conversations)) {
-    stop("Nie można dodać wiadomości, aktywna konwersacja (ID: ", active_id, ") nie istnieje.")
-  }
-  if (!role %in% c("user", "assistant", "system")) {
-    stop("Nieprawidłowa rola wiadomości: ", role)
-  }
+  if (is.null(active_id)) stop("Nie można dodać wiadomości, brak aktywnej konwersacji.")
+  if (!active_id %in% names(.history_env$conversations)) stop("Aktywna konwersacja (ID: ", active_id, ") już nie istnieje.")
+  if (!role %in% c("user", "assistant", "system")) stop("Nieprawidłowa rola wiadomości: ", role)
 
-  # Pobierz aktualny obiekt konwersacji
   conv <- .history_env$conversations[[active_id]]
+  new_title_generated <- NULL
 
-  # Dodaj nową wiadomość do historii w pobranym obiekcie
   new_message <- list(role = role, content = content)
-  conv$history <- c(conv$history %||% list(), list(new_message)) # Użyj %||% na wypadek, gdyby historia była NULL
+  conv$history <- c(conv$history %||% list(), list(new_message))
 
-  # Aktualizacja tytułu (jeśli to pierwsza wiadomość użytkownika)
-  is_first_user_message <- role == "user" && sum(sapply(conv$history, function(m) m$role == "user")) == 1 # Sprawdzamy czy jest dokładnie 1
+  # Aktualizacja tytułu
+  is_first_user_message <- role == "user" && sum(sapply(conv$history, function(m) m$role == "user")) == 1
   if (is_first_user_message && nzchar(trimws(content))) {
-    new_title <- substr(trimws(content), 1, 35)
-    if (nchar(trimws(content)) > 35) new_title <- paste0(new_title, "...")
-    conv$title <- new_title # Zaktualizuj tytuł w pobranym obiekcie
+    words <- strsplit(trimws(content), "\\s+")[[1]]
+    new_title <- paste(head(words, 5), collapse = " ")
+    if (nchar(new_title) > 35) new_title <- substr(new_title, 1, 32)
+    if (nchar(new_title) < nchar(trimws(content))) new_title <- paste0(new_title, "...")
+
+    conv$title <- new_title
+    new_title_generated <- new_title
     message(paste("Ustawiono tytuł rozmowy", active_id, "na:", new_title))
   }
 
-  # !! WAŻNE: Zapisz zmodyfikowany obiekt konwersacji z powrotem do środowiska !!
   .history_env$conversations[[active_id]] <- conv
-  message(paste("Zapisano zaktualizowaną historię (długość:", length(conv$history), ") dla konwersacji", active_id))
+  # message(paste("Zapisano historię (dł:", length(conv$history), ") dla", active_id)) # Mniej gadatliwe
 
-  invisible(NULL)
+  return(new_title_generated)
 }
 
-#' Aktualizacja tytułu konwersacji
-#'
-#' !! ZMIANA: Pobiera obiekt konwersacji, modyfikuje go i zapisuje z powrotem !!
-#'
+
+#' Pobieranie tytułu konwersacji
 #' @param id ID konwersacji.
-#' @param title Nowy tytuł.
-#' @return Invisible NULL. Zgłasza błąd, jeśli ID nie istnieje.
+#' @return Tytuł konwersacji lub NULL.
 #' @export
-update_conversation_title <- function(id, title) {
-  if (!id %in% names(.history_env$conversations)) {
-    stop("Nie znaleziono konwersacji o ID: ", id, " do aktualizacji tytułu.")
-  }
-  # Pobierz obiekt
-  conv <- .history_env$conversations[[id]]
-  # Zmodyfikuj
-  conv$title <- title
-  # Zapisz z powrotem
-  .history_env$conversations[[id]] <- conv
-  invisible(NULL)
+get_conversation_title <- function(id) {
+  if (!id %in% names(.history_env$conversations)) return(NULL)
+  return(.history_env$conversations[[id]]$title %||% "[Brak tytułu]")
 }
 
-#' Pobieranie listy konwersacji do wyświetlenia
-#'
-#' Zwraca listę, gdzie każdy element to lista z `id` i `title`.
-#' Sortuje wg czasu utworzenia (najnowsze na początku).
-#' @return Lista konwersacji (każda to list(id, title)).
+#' Pobieranie listy ID wszystkich konwersacji
+#' @return Wektor znakowy z ID.
 #' @export
-get_conversation_list_for_display <- function() {
-  convs <- .history_env$conversations
-  if (length(convs) == 0) {
-    return(list())
-  }
-  creation_times <- sapply(convs, function(c) c$created_at %||% Sys.time()) # Dodano %||%
-  sorted_indices <- order(creation_times, decreasing = TRUE)
-  sorted_convs <- convs[sorted_indices]
-
-  lapply(sorted_convs, function(conv) {
-    list(id = conv$id %||% "BRAK_ID", title = conv$title %||% "Brak tytułu") # Dodano %||%
-  })
+get_all_conversation_ids <- function() {
+  names(.history_env$conversations)
 }
 
-#' Resetowanie całego menedżera historii (na wszelki wypadek)
+#' Resetowanie menedżera historii
 #' @export
 reset_history_manager <- function() {
   message("Resetowanie menedżera historii...")
@@ -208,67 +209,46 @@ reset_history_manager <- function() {
   invisible(NULL)
 }
 
-# --- FUNKCJE ZWIĄZANE Z ZAŁĄCZNIKAMI KONWERSACJI ---
+# --- FUNKCJE ZWIĄZANE Z ZAŁĄCZNIKAMI ---
 
 #' Dodawanie załącznika do aktywnej konwersacji
-#'
-#' !! ZMIANA: Pobiera obiekt konwersacji, modyfikuje go i zapisuje z powrotem !!
-#' Dodaje plik (nazwę i treść) do listy załączników *całej* aktywnej konwersacji.
-#' Sprawdza, czy plik o tej nazwie już nie istnieje w danej konwersacji.
-#'
 #' @param name Nazwa pliku.
-#' @param content Treść pliku jako pojedynczy string.
-#' @return TRUE jeśli dodano, FALSE jeśli plik o tej nazwie już istnieje. Zgłasza błąd, jeśli brak aktywnej konwersacji.
+#' @param content Treść pliku.
+#' @return TRUE jeśli dodano, FALSE jeśli plik istnieje.
 #' @export
 add_attachment_to_active_conversation <- function(name, content) {
   active_id <- get_active_conversation_id()
-  if (is.null(active_id)) {
-    stop("Nie można dodać załącznika, żadna konwersacja nie jest aktywna.")
-  }
-  if (!active_id %in% names(.history_env$conversations)) {
-    stop("Nie można dodać załącznika, aktywna konwersacja (ID: ", active_id, ") nie istnieje.")
-  }
+  if (is.null(active_id)) stop("Nie można dodać załącznika, brak aktywnej konwersacji.")
+  if (!active_id %in% names(.history_env$conversations)) stop("Aktywna konwersacja (ID: ", active_id, ") już nie istnieje.")
 
-  # Pobierz obiekt konwersacji
   conv <- .history_env$conversations[[active_id]]
-  # Upewnij się, że pole attachments istnieje
   conv$attachments <- conv$attachments %||% list()
 
-  # Sprawdź, czy plik o tej nazwie już istnieje w tej konwersacji
   if (any(sapply(conv$attachments, function(att) att$name == name))) {
-    message(paste("Plik o nazwie", name, "już istnieje w konwersacji", active_id))
+    message(paste("Plik", name, "już istnieje w konwersacji", active_id))
     return(FALSE)
   }
 
-  # Dodaj nowy załącznik do pobranego obiektu
   new_attachment <- list(name = name, content = content)
   conv$attachments <- c(conv$attachments, list(new_attachment))
-  message(paste("Dodano załącznik", name, "do obiektu konwersacji", active_id))
+  message(paste("Dodano załącznik", name, "do konwersacji", active_id))
 
-  # !! WAŻNE: Zapisz zmodyfikowany obiekt konwersacji z powrotem do środowiska !!
   .history_env$conversations[[active_id]] <- conv
-  message(paste("Zapisano zaktualizowane załączniki (liczba:", length(conv$attachments), ") dla konwersacji", active_id))
+  # message(paste("Zapisano załączniki (liczba:", length(conv$attachments), ") dla", active_id)) # Mniej gadatliwe
 
   return(TRUE)
 }
 
 #' Pobieranie załączników dla aktywnej konwersacji
-#'
-#' Zwraca listę załączników (każdy to `list(name=..., content=...)`) dla aktywnej konwersacji.
-#'
-#' @return Lista załączników lub pusta lista.
+#' @return Lista załączników.
 #' @export
 get_active_conversation_attachments <- function() {
   active_conv <- get_active_conversation()
-  if (is.null(active_conv)) {
-    message("Ostrzeżenie: Brak aktywnej konwersacji w get_active_conversation_attachments()")
-    return(list())
-  }
-  # Zwróć pustą listę jeśli pole attachments nie istnieje lub jest NULL
+  if (is.null(active_conv)) return(list())
   return(active_conv$attachments %||% list())
 }
 
-# Helper do zwracania wartości domyślnej jeśli x jest NULL
+# Helper %||%
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }

@@ -4,26 +4,15 @@
 \alias{get_assistant_response}
 \title{Pobranie odpowiedzi asystenta dla aktywnej konwersacji}
 \usage{
-get_assistant_response(
-  pending_attachments = list(),
-  model = "gpt-4o",
-  temperature = 0.5
-)
+get_assistant_response(model = "gpt-4o")
 }
 \arguments{
-\item{pending_attachments}{Lista plików dołączonych do bieżącego zapytania.
-Każdy element listy powinien być listą z polami \code{name} i \code{path}.
-Np. \code{list(list(name="plik.pdf", path="/tmp/Rtmp.../0.pdf"))}.}
-
 \item{model}{Model OpenAI do użycia (domyślnie "gpt-4o").}
-
-\item{temperature}{Parametr temperatury dla API (domyślnie 0.5).}
 }
 \value{
-Tekst odpowiedzi asystenta.
+Tekst odpowiedzi asystenta lub komunikat o błędzie.
 }
 \description{
-Funkcja wysyła aktualną historię aktywnej konwersacji
-wraz z treścią \emph{przekazanych} plików (z bieżącego zapytania) do API OpenAI.
-Otrzymana odpowiedź asystenta jest dodawana do historii aktywnej konwersacji.
+Wysyła historię, załączniki ORAZ używa specyficznej dla konwersacji
+temperatury i komunikatu systemowego.
 }

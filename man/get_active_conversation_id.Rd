@@ -7,7 +7,7 @@
 get_active_conversation_id()
 }
 \value{
-ID aktywnej konwersacji lub NULL, jeśli żadna nie jest aktywna.
+ID aktywnej konwersacji lub NULL.
 }
 \description{
 Pobieranie ID aktywnej konwersacji

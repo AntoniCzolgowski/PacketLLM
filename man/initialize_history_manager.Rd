@@ -7,9 +7,8 @@
 initialize_history_manager()
 }
 \value{
-ID nowo utworzonej, aktywnej konwersacji.
+ID nowo utworzonej, pierwszej konwersacji.
 }
 \description{
-Tworzy pierwszą, pustą konwersację i ustawia ją jako aktywną.
-Wywoływana na starcie serwera gadżetu.
+Tworzy pierwszą konwersację. Wywoływana na starcie serwera gadżetu.
 }

@@ -5,15 +5,15 @@
 \title{Tworzenie nowej konwersacji}
 \usage{
 create_new_conversation(
-  activate = TRUE,
-  add_initial_system_msg = TRUE,
+  activate = FALSE,
+  add_initial_settings = TRUE,
   title = NULL
 )
 }
 \arguments{
-\item{activate}{Czy ustawić nową konwersację jako aktywną? (Domyślnie TRUE)}
+\item{activate}{Czy ustawić nową konwersację jako aktywną? (Domyślnie FALSE)}
 
-\item{add_initial_system_msg}{Czy dodać domyślny komunikat systemowy? (Domyślnie TRUE)}
+\item{add_initial_settings}{Czy dodać domyślny komunikat systemowy i temperaturę? (Domyślnie TRUE) # Zmieniono nazwę flagi}
 
 \item{title}{Początkowy tytuł konwersacji (Domyślnie "Nowa rozmowa \link{czas}")}
 }
@@ -21,5 +21,5 @@ create_new_conversation(
 ID nowo utworzonej konwersacji.
 }
 \description{
-Tworzy nowy obiekt konwersacji, dodaje go do listy i opcjonalnie ustawia jako aktywny.
+Tworzy nowy obiekt konwersacji z domyślnymi ustawieniami zaawansowanymi.
 }

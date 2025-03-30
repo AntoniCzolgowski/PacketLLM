@@ -12,8 +12,8 @@ add_message_to_active_history(role, content)
 \item{content}{Treść wiadomości.}
 }
 \value{
-Invisible NULL. Zgłasza błąd, jeśli żadna konwersacja nie jest aktywna.
+Nowy tytuł konwersacji (string) jeśli został zaktualizowany, w przeciwnym razie NULL.
 }
 \description{
-Dodawanie wiadomości do historii aktywnej konwersacji
+Aktualizuje tytuł, jeśli to pierwsza wiadomość użytkownika.
 }

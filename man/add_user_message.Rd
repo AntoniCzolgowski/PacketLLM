@@ -7,13 +7,11 @@
 add_user_message(text)
 }
 \arguments{
-\item{text}{Tekst wiadomości użytkownika (łańcuch znaków).}
+\item{text}{Tekst wiadomości użytkownika.}
 }
 \value{
 Invisible NULL
 }
 \description{
-Funkcja dodaje wiadomość użytkownika do historii aktywnej konwersacji,
-używając \code{history_manager}. Jeśli jest to pierwsza wiadomość użytkownika,
-tytuł konwersacji zostanie automatycznie zaktualizowany.
+Dodanie wiadomości użytkownika do aktywnej konwersacji
 }

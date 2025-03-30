@@ -10,7 +10,7 @@ set_active_conversation(id)
 \item{id}{ID konwersacji do aktywacji.}
 }
 \value{
-Invisible NULL. Zgłasza błąd, jeśli ID nie istnieje.
+Invisible NULL.
 }
 \description{
 Ustawianie aktywnej konwersacji
