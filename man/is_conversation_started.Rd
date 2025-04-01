@@ -2,17 +2,17 @@
 % Please edit documentation in R/history_menager.R
 \name{is_conversation_started}
 \alias{is_conversation_started}
-\title{Sprawdza, czy konwersacja została rozpoczęta (model zablokowany)}
+\title{Checks if the conversation has started (model locked)}
 \usage{
 is_conversation_started(id)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 }
 \value{
-TRUE jeśli model jest zablokowany, FALSE w przeciwnym razie lub jeśli konwersacja nie istnieje.
+TRUE if the model is locked, FALSE otherwise or if the conversation doesn't exist.
 }
 \description{
-Sprawdza, czy flaga \code{model_locked} jest TRUE. Model jest blokowany
-po dodaniu pierwszej wiadomości \strong{asystenta}.
+Checks if the \code{model_locked} flag is TRUE. The model is locked
+after the first \strong{assistant} message is added.
 }

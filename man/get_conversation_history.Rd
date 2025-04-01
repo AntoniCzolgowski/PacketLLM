@@ -2,16 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_history}
 \alias{get_conversation_history}
-\title{Pobiera historię czatu dla konwersacji o podanym ID}
+\title{Gets the chat history for the conversation with the given ID}
 \usage{
 get_conversation_history(id)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 }
 \value{
-Lista wiadomości lub NULL, jeśli konwersacja nie istnieje.
+List of messages or NULL if conversation doesn't exist.
 }
 \description{
-Pobiera historię czatu dla konwersacji o podanym ID
+Gets the chat history for the conversation with the given ID
 }

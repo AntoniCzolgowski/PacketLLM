@@ -2,16 +2,16 @@
 % Please edit documentation in R/chat_logic.R
 \name{add_user_message}
 \alias{add_user_message}
-\title{Dodanie wiadomości użytkownika do aktywnej konwersacji}
+\title{Add user message to the active conversation}
 \usage{
 add_user_message(text)
 }
 \arguments{
-\item{text}{Tekst wiadomości użytkownika.}
+\item{text}{The user's message text.}
 }
 \value{
 Invisible NULL
 }
 \description{
-Wywołuje add_message_to_active_history, która blokuje model po pierwszej wiadomości.
+Calls add_message_to_active_history, which locks the model after the first message.
 }

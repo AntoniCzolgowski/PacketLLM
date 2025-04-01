@@ -2,18 +2,18 @@
 % Please edit documentation in R/history_menager.R
 \name{set_conversation_temperature}
 \alias{set_conversation_temperature}
-\title{Ustawia temperaturę dla konwersacji o podanym ID}
+\title{Sets the temperature for the conversation with the given ID}
 \usage{
 set_conversation_temperature(id, temperature)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 
-\item{temperature}{Nowa wartość temperatury (liczba 0-1).}
+\item{temperature}{New temperature value (number 0-1).}
 }
 \value{
-TRUE jeśli ustawiono, FALSE jeśli konwersacja nie istnieje lub wartość jest nieprawidłowa.
+TRUE if set, FALSE if conversation doesn't exist or value is invalid.
 }
 \description{
-Ustawia temperaturę dla konwersacji o podanym ID
+Sets the temperature for the conversation with the given ID
 }

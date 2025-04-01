@@ -2,16 +2,17 @@
 % Please edit documentation in R/file_utils.R
 \name{parse_pages}
 \alias{parse_pages}
-\title{Parsowanie zakresu stron}
+\title{Parse page range}
 \usage{
 parse_pages(pages_str)
 }
 \arguments{
-\item{pages_str}{Łańcuch znaków określający strony, np. "1-3,5".}
+\item{pages_str}{Character string specifying pages, e.g., "1-3,5".}
 }
 \value{
-Wektor numeryczny zawierający poszczególne strony.
+A numeric vector containing the individual pages.
 }
 \description{
-Funkcja przetwarza ciąg znaków określający zakres stron (np. "1-3,5") i zwraca wektor numeryczny.
+This function processes a character string specifying a page range (e.g., "1-3,5")
+and returns a numeric vector.
 }

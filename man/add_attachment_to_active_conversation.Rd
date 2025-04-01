@@ -2,18 +2,18 @@
 % Please edit documentation in R/history_menager.R
 \name{add_attachment_to_active_conversation}
 \alias{add_attachment_to_active_conversation}
-\title{Dodaje załącznik do aktywnej konwersacji}
+\title{Adds an attachment to the active conversation}
 \usage{
 add_attachment_to_active_conversation(name, content)
 }
 \arguments{
-\item{name}{Nazwa pliku załącznika.}
+\item{name}{Name of the attachment file.}
 
-\item{content}{Treść pliku jako string.}
+\item{content}{File content as a string.}
 }
 \value{
-TRUE jeśli dodano, FALSE jeśli plik o tej nazwie już istnieje lub brak aktywnej konwersacji.
+TRUE if added, FALSE if a file with this name already exists or no active conversation.
 }
 \description{
-Dodaje załącznik do aktywnej konwersacji
+Adds an attachment to the active conversation
 }

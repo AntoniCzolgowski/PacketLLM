@@ -2,7 +2,7 @@
 % Please edit documentation in R/history_menager.R
 \name{reset_history_manager}
 \alias{reset_history_manager}
-\title{Resetuje cały stan menedżera historii}
+\title{Resets the entire state of the history manager}
 \usage{
 reset_history_manager()
 }
@@ -10,5 +10,5 @@ reset_history_manager()
 Invisible NULL.
 }
 \description{
-Resetuje cały stan menedżera historii
+Resets the entire state of the history manager
 }

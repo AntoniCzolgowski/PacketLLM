@@ -3,7 +3,7 @@
 \docType{data}
 \name{available_openai_models}
 \alias{available_openai_models}
-\title{Lista dostępnych modeli OpenAI do wyboru w UI}
+\title{List of available OpenAI models for selection in the UI}
 \format{
 An object of class \code{character} of length 4.
 }
@@ -11,6 +11,6 @@ An object of class \code{character} of length 4.
 available_openai_models
 }
 \description{
-Lista dostępnych modeli OpenAI do wyboru w UI
+List of available OpenAI models for selection in the UI
 }
 \keyword{datasets}

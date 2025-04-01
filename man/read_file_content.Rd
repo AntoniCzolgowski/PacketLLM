@@ -2,19 +2,20 @@
 % Please edit documentation in R/file_utils.R
 \name{read_file_content}
 \alias{read_file_content}
-\title{Odczyt zawartości pliku}
+\title{Read file content}
 \usage{
 read_file_content(file_path, pages = NULL)
 }
 \arguments{
-\item{file_path}{Łańcuch znaków. Ścieżka do pliku.}
+\item{file_path}{Character string. Path to the file.}
 
-\item{pages}{Opcjonalnie. Wektor numeryczny określający, które strony (dla PDF) mają być odczytane.}
+\item{pages}{Optional. A numeric vector specifying which pages (for PDF) should be read.}
 }
 \value{
-Łańcuch znaków zawierający treść pliku.
+A character string containing the file content.
 }
 \description{
-Funkcja odczytuje zawartość pliku o rozszerzeniu .R, .pdf lub .docx i zwraca ją jako pojedynczy łańcuch znaków.
-W przypadku plików PDF, jeżeli podano parametr \code{pages}, tylko wybrane strony zostaną odczytane.
+This function reads the content of a file with the extension .R, .pdf, or .docx
+and returns it as a single character string.
+For PDF files, if the \code{pages} parameter is provided, only the selected pages will be read.
 }

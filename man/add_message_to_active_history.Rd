@@ -2,23 +2,23 @@
 % Please edit documentation in R/history_menager.R
 \name{add_message_to_active_history}
 \alias{add_message_to_active_history}
-\title{Dodawanie wiadomości do historii aktywnej konwersacji}
+\title{Adds a message to the active conversation's history}
 \usage{
 add_message_to_active_history(role, content)
 }
 \arguments{
-\item{role}{Rola ("user", "assistant", "system").}
+\item{role}{Role ("user", "assistant", "system").}
 
-\item{content}{Treść wiadomości.}
+\item{content}{Message content.}
 }
 \value{
-Lista z informacją o wyniku:
-- \code{list(type = "title_set", new_title = "...")} jeśli ustawiono nowy tytuł.
-- \code{list(type = "assistant_locked_model")} jeśli model został zablokowany.
-- \code{list(type = "message_added")} w pozostałych przypadkach dodania wiadomości.
-- \code{list(type = "error", message = "...")} w przypadku błędu.
+A list indicating the result:
+- \code{list(type = "title_set", new_title = "...")} if a new title was set.
+- \code{list(type = "assistant_locked_model")} if the model was locked.
+- \code{list(type = "message_added")} in other cases of adding a message.
+- \code{list(type = "error", message = "...")} in case of an error.
 }
 \description{
-Aktualizuje tytuł konwersacji na podstawie treści, jeśli to pierwsza wiadomość użytkownika.
-Ustawia flagę \code{model_locked} na TRUE przy pierwszej wiadomości \strong{asystenta}.
+Updates the conversation title based on content if it's the first user message.
+Sets the \code{model_locked} flag to TRUE on the first \strong{assistant} message.
 }

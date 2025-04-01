@@ -1,56 +1,59 @@
 # history_manager.R
 
-# Środowisko do przechowywania stanu historii
+# Environment to store history state
 .history_env <- new.env(parent = emptyenv())
 .history_env$conversations <- list()
 .history_env$active_conversation_id <- NULL
 .history_env$conversation_counter <- 0
 
-#' Generuje unikalne ID konwersacji
-#' @return String z ID konwersacji.
+#' Generates a unique conversation ID
+#' @return String with the conversation ID.
 #' @noRd
 generate_conversation_id <- function() {
   .history_env$conversation_counter <- .history_env$conversation_counter + 1
   paste0("conv_", .history_env$conversation_counter, "_", as.integer(Sys.time()))
 }
 
-#' Inicjalizuje menedżera historii
+#' Initializes the history manager
 #'
-#' Czyści stan i tworzy pierwszą, pustą konwersację.
-#' @return ID pierwszej utworzonej konwersacji.
+#' Clears the state and creates the first, empty conversation.
+#' @return ID of the first created conversation.
 #' @export
 initialize_history_manager <- function() {
-  message("Inicjalizuję menedżera historii...")
+  message("Initializing history manager...")
   .history_env$conversations <- list()
   .history_env$active_conversation_id <- NULL
   .history_env$conversation_counter <- 0
-  first_id <- create_new_conversation(activate = FALSE, add_initial_settings = TRUE, title = "Nowa Rozmowa")
-  message(paste("Menedżer historii zainicjalizowany. Utworzono pierwszą rozmowę:", first_id))
+  # Default title translated
+  first_id <- create_new_conversation(activate = FALSE, add_initial_settings = TRUE, title = "New Conversation")
+  message(paste("History manager initialized. Created first conversation:", first_id))
   return(first_id)
 }
 
-#' Tworzy nową konwersację
+#' Creates a new conversation
 #'
-#' Dodaje nową konwersację do środowiska `.history_env`.
+#' Adds a new conversation to the `.history_env` environment.
 #'
-#' @param activate Czy ustawić nową konwersację jako aktywną (domyślnie FALSE).
-#' @param add_initial_settings Czy dodać domyślny komunikat systemowy do historii (domyślnie TRUE).
-#' @param title Początkowy tytuł konwersacji (domyślnie generowany na podstawie czasu).
-#' @return ID nowo utworzonej konwersacji.
+#' @param activate Should the new conversation be set as active (default FALSE).
+#' @param add_initial_settings Should a default system message be added to the history (default TRUE).
+#' @param title Initial title of the conversation (default generated based on time).
+#' @return ID of the newly created conversation.
 #' @export
 create_new_conversation <- function(activate = FALSE, add_initial_settings = TRUE, title = NULL) {
   conv_id <- generate_conversation_id()
   if (is.null(title)) {
-    title <- paste("Rozmowa", format(Sys.time(), "%H:%M:%S"))
+    # Default title format translated
+    title <- paste("Conversation", format(Sys.time(), "%H:%M:%S"))
   }
-  message(paste("Tworzę nową konwersację o ID:", conv_id, "i tytule:", title))
+  message(paste("Creating new conversation with ID:", conv_id, "and title:", title))
 
   default_model <- if (exists("available_openai_models") && length(available_openai_models) > 0) {
-    available_openai_models[1] # Używamy zmiennej z openai_api.R
+    available_openai_models[1] # Use the variable from openai_api.R
   } else {
     "gpt-4o" # Fallback
   }
-  default_system_message <- "Jesteś pomocnym asystentem. Odpowiadaj w sposób czytelny i precyzyjny, zachowując formatowanie kodu, gdy jest to wymagane."
+  # Default system message translated
+  default_system_message <- "You are a helpful assistant. Respond clearly and precisely, maintaining code formatting when required."
   default_temperature <- 0.5
 
 
@@ -61,19 +64,19 @@ create_new_conversation <- function(activate = FALSE, add_initial_settings = TRU
     attachments = list(),
     created_at = Sys.time(),
     temperature = default_temperature,
-    system_message = "", # Ustawiane poniżej
+    system_message = "", # Set below
     model = default_model,
-    model_locked = FALSE # Flaga blokady zmiany modelu
+    model_locked = FALSE # Flag for locking model changes
   )
 
   if (add_initial_settings) {
-    # Dodaj komunikat systemowy tylko do pola `system_message`, niekoniecznie do `history` na start
+    # Add system message only to the `system_message` field, not necessarily to `history` at the start
     # new_conv$history <- list(list(role = "system", content = default_system_message))
     new_conv$system_message <- default_system_message
-    message(paste("Dodano domyślne ustawienia (SysMsg, Temp) i model (", default_model, ") do rozmowy", conv_id))
+    message(paste("Added default settings (SysMsg, Temp) and model (", default_model, ") to conversation", conv_id))
   } else {
-    new_conv$system_message <- "" # Pusty, jeśli nie dodajemy ustawień
-    message(paste("Ustawiono domyślny model (", default_model, ") dla rozmowy", conv_id, " (bez początkowych ustawień)"))
+    new_conv$system_message <- "" # Empty if not adding settings
+    message(paste("Set default model (", default_model, ") for conversation", conv_id, " (without initial settings)"))
   }
 
   .history_env$conversations[[conv_id]] <- new_conv
@@ -84,89 +87,108 @@ create_new_conversation <- function(activate = FALSE, add_initial_settings = TRU
   return(conv_id)
 }
 
-#' Sprawdza, czy konwersacja została rozpoczęta (model zablokowany)
+#' Checks if the conversation has started (model locked)
 #'
-#' Sprawdza, czy flaga `model_locked` jest TRUE. Model jest blokowany
-#' po dodaniu pierwszej wiadomości **asystenta**.
+#' Checks if the `model_locked` flag is TRUE. The model is locked
+#' after the first **assistant** message is added.
 #'
-#' @param id ID konwersacji.
-#' @return TRUE jeśli model jest zablokowany, FALSE w przeciwnym razie lub jeśli konwersacja nie istnieje.
+#' @param id Conversation ID.
+#' @return TRUE if the model is locked, FALSE otherwise or if the conversation doesn't exist.
 #' @export
 is_conversation_started <- function(id) {
   if (!id %in% names(.history_env$conversations)) {
-    warning("Próba sprawdzenia stanu blokady dla nieistniejącej konwersacji: ", id)
+    warning("Attempting to check lock status for non-existent conversation: ", id)
     return(FALSE)
   }
-  # Dostęp do flagi model_locked
+  # Access the model_locked flag
   return(isTRUE(.history_env$conversations[[id]]$model_locked))
 }
 
 
-#' Dodawanie wiadomości do historii aktywnej konwersacji
+#' Adds a message to the active conversation's history
 #'
-#' Aktualizuje tytuł konwersacji na podstawie treści, jeśli to pierwsza wiadomość użytkownika.
-#' Ustawia flagę `model_locked` na TRUE przy pierwszej wiadomości **asystenta**.
+#' Updates the conversation title based on content if it's the first user message.
+#' Sets the `model_locked` flag to TRUE on the first **assistant** message.
 #'
-#' @param role Rola ("user", "assistant", "system").
-#' @param content Treść wiadomości.
-#' @return Lista z informacją o wyniku:
-#'         - `list(type = "title_set", new_title = "...")` jeśli ustawiono nowy tytuł.
-#'         - `list(type = "assistant_locked_model")` jeśli model został zablokowany.
-#'         - `list(type = "message_added")` w pozostałych przypadkach dodania wiadomości.
-#'         - `list(type = "error", message = "...")` w przypadku błędu.
+#' @param role Role ("user", "assistant", "system").
+#' @param content Message content.
+#' @return A list indicating the result:
+#'         - `list(type = "title_set", new_title = "...")` if a new title was set.
+#'         - `list(type = "assistant_locked_model")` if the model was locked.
+#'         - `list(type = "message_added")` in other cases of adding a message.
+#'         - `list(type = "error", message = "...")` in case of an error.
 #' @export
 add_message_to_active_history <- function(role, content) {
   active_id <- get_active_conversation_id()
   if (is.null(active_id)) {
-    warning("Nie można dodać wiadomości, brak aktywnej konwersacji.")
-    return(list(type = "error", message = "Brak aktywnej konwersacji."))
+    warning("Cannot add message, no active conversation.")
+    return(list(type = "error", message = "No active conversation."))
   }
   if (!role %in% c("user", "assistant", "system")) {
-    warning("Nieprawidłowa rola wiadomości: ", role)
-    return(list(type = "error", message = paste("Nieprawidłowa rola:", role)))
+    warning("Invalid message role: ", role)
+    return(list(type = "error", message = paste("Invalid role:", role)))
   }
 
-  # Sprawdź, czy konwersacja istnieje
+  # Check if conversation exists
   if (!active_id %in% names(.history_env$conversations)) {
-    warning("Aktywna konwersacja (ID: ", active_id, ") nie istnieje w momencie dodawania wiadomości.")
-    return(list(type = "error", message = "Aktywna konwersacja nie istnieje."))
+    warning("Active conversation (ID: ", active_id, ") does not exist when adding message.")
+    return(list(type = "error", message = "Active conversation does not exist."))
   }
 
-  # Bezpieczny dostęp do konwersacji
-  # conv_ref <- .history_env$conversations[[active_id]] # Zamiast tryCatch
-
-  return_value <- list(type = "message_added") # Domyślna wartość zwracana
+  return_value <- list(type = "message_added") # Default return value
   new_message <- list(role = role, content = content)
 
-  # Sprawdź, czy model powinien zostać zablokowany (pierwsza odpowiedź asystenta)
+  # Check if the model should be locked (first assistant response)
   should_lock_model <- role == "assistant" && !isTRUE(.history_env$conversations[[active_id]]$model_locked)
 
-  # Dodaj wiadomość do historii
+  # Add message to history
   current_history <- .history_env$conversations[[active_id]]$history %||% list()
   .history_env$conversations[[active_id]]$history <- c(current_history, list(new_message))
-  message(paste("Dodano wiadomość", role, "do", active_id))
+  message(paste("Added", role, "message to", active_id))
 
-  # Zablokuj model, jeśli trzeba
+  # Lock the model if needed
   if (should_lock_model) {
     .history_env$conversations[[active_id]]$model_locked <- TRUE
-    message(paste("Model dla konwersacji", active_id, "został zablokowany."))
-    # Ustaw typ zwrotny (może zostać nadpisany przez logikę tytułu)
+    message(paste("Model for conversation", active_id, "has been locked."))
     if (return_value$type == "message_added") {
       return_value <- list(type = "assistant_locked_model")
     }
   }
 
-  # --- Logika ustawiania tytułu ---
-  # Odśwież referencję po dodaniu wiadomości
+  # --- Title setting logic ---
   conv_history_updated <- .history_env$conversations[[active_id]]$history %||% list()
   user_message_count <- sum(sapply(conv_history_updated, function(m) !is.null(m$role) && m$role == "user"))
-
-  # Sprawdź, czy to *pierwsza* wiadomość użytkownika w tej konwersacji
   is_first_user_message_ever <- role == "user" && user_message_count == 1
 
   if (is_first_user_message_ever && nzchar(trimws(content))) {
-    words <- strsplit(trimws(content), "\\s+")[[1]]
-    words <- words[nzchar(words)]
+
+    # --- MODIFIED TITLE LOGIC START ---
+    title_content_base <- content # Start with the full content
+    attachment_marker <- "\n\n<strong>Attached:</strong>"
+    attachment_marker_start <- "<strong>Attached:</strong>"
+
+    # Scenario 2: Text AND Attachments
+    if (grepl(attachment_marker, title_content_base, fixed = TRUE)) {
+      # Use only the text BEFORE the attachment marker for the title
+      title_content_processed <- trimws(strsplit(title_content_base, attachment_marker, fixed = TRUE)[[1]][1])
+      message("Title generation: Detected text and attachments. Using only text part for title.")
+      # Scenario 1: Attachments ONLY
+    } else if (startsWith(title_content_base, attachment_marker_start)) {
+      # Use the content, but remove the <strong> tags for the title
+      title_content_processed <- gsub("<strong>|</strong>", "", title_content_base, fixed = FALSE) # Use fixed=FALSE for regex |
+      message("Title generation: Detected attachments only. Using message content without bold tags for title.")
+      # Default Scenario: Regular text message
+    } else {
+      title_content_processed <- title_content_base
+      message("Title generation: Detected regular text message.")
+    }
+
+    # Use the processed content for title generation
+    words <- strsplit(trimws(title_content_processed), "\\s+")[[1]]
+    words <- words[nzchar(words)] # Remove empty strings resulting from multiple spaces
+    # --- MODIFIED TITLE LOGIC END ---
+
+    # Existing truncation logic (applied to processed content)
     max_words <- 5
     max_chars <- 40
     new_title <- paste(head(words, max_words), collapse = " ")
@@ -179,94 +201,95 @@ add_message_to_active_history <- function(role, content) {
       new_title <- paste0(new_title, "...")
     }
     if (!nzchar(new_title)) {
-      new_title <- paste("Rozmowa", format(Sys.time(), "%M%S"))
+      new_title <- paste("Conversation", format(Sys.time(), "%M%S"))
     }
 
     .history_env$conversations[[active_id]]$title <- new_title
-    message(paste("Ustawiono tytuł dla", active_id, "na:", new_title))
+    message(paste("Set title for", active_id, "to:", new_title))
+    # Ensure this return value is set correctly even after modification
     return_value <- list(type = "title_set", new_title = new_title)
   }
-  # --- Koniec logiki tytułu ---
+  # --- End of title logic ---
 
   return(return_value)
 }
 
 
-#' Usuwa konwersację o podanym ID
-#' @param id ID konwersacji do usunięcia.
-#' @return TRUE jeśli usunięto, FALSE jeśli nie istniała.
+#' Deletes the conversation with the given ID
+#' @param id ID of the conversation to delete.
+#' @return TRUE if deleted, FALSE if it did not exist.
 #' @export
 delete_conversation <- function(id) {
   if (!id %in% names(.history_env$conversations)) {
-    warning("Próba usunięcia nieistniejącej konwersacji o ID: ", id)
+    warning("Attempting to delete non-existent conversation with ID: ", id)
     return(FALSE)
   }
-  message(paste("Usuwam konwersację o ID:", id))
+  message(paste("Deleting conversation with ID:", id))
   .history_env$conversations[[id]] <- NULL
 
   current_active_id <- .history_env$active_conversation_id
   if (!is.null(current_active_id) && current_active_id == id) {
-    message("Usunięto aktywną konwersację. Resetuję active_conversation_id.")
+    message("Deleted the active conversation. Resetting active_conversation_id.")
     .history_env$active_conversation_id <- NULL
   }
   return(TRUE)
 }
 
-#' Ustawia aktywną konwersację
-#' @param id ID konwersacji do aktywacji lub NULL, aby zdezaktywować.
+#' Sets the active conversation
+#' @param id ID of the conversation to activate or NULL to deactivate.
 #' @return Invisible NULL.
 #' @export
 set_active_conversation <- function(id) {
   if (is.null(id)) {
     if (!is.null(.history_env$active_conversation_id)) {
-      message("Dezaktywowano aktywną konwersację.")
+      message("Deactivated the active conversation.")
       .history_env$active_conversation_id <- NULL
     }
     return(invisible(NULL))
   }
 
   if (!id %in% names(.history_env$conversations)) {
-    warning("Próba ustawienia nieistniejącej konwersacji jako aktywnej: ", id)
-    # Nie ustawiaj active_id na nieistniejący
+    warning("Attempting to set a non-existent conversation as active: ", id)
+    # Do not set active_id to a non-existent one
     # .history_env$active_conversation_id <- NULL
     return(invisible(NULL))
   }
 
   if (is.null(.history_env$active_conversation_id) || .history_env$active_conversation_id != id) {
-    message(paste("Ustawiono aktywną konwersację na ID:", id))
+    message(paste("Set active conversation to ID:", id))
     .history_env$active_conversation_id <- id
   }
   return(invisible(NULL))
 }
 
-#' Pobiera ID aktywnej konwersacji
-#' @return ID aktywnej konwersacji (string) lub NULL.
+#' Gets the ID of the active conversation
+#' @return ID of the active conversation (string) or NULL.
 #' @export
 get_active_conversation_id <- function() {
   active_id <- .history_env$active_conversation_id
-  # Sprawdź, czy ID wskazuje na istniejącą konwersację
+  # Check if the ID points to an existing conversation
   if (!is.null(active_id) && !active_id %in% names(.history_env$conversations)) {
-    warning(paste("Aktywny ID", active_id, "wskazuje na nieistniejącą konwersację. Resetuję."))
+    warning(paste("Active ID", active_id, "points to a non-existent conversation. Resetting."))
     .history_env$active_conversation_id <- NULL
     return(NULL)
   }
   return(active_id)
 }
 
-#' Pobiera pełny obiekt aktywnej konwersacji
-#' @return Lista reprezentująca konwersację lub NULL.
+#' Gets the full object of the active conversation
+#' @return List representing the conversation or NULL.
 #' @export
 get_active_conversation <- function() {
   active_id <- get_active_conversation_id()
   if (is.null(active_id)) {
     return(NULL)
   }
-  # Zwróć dane dla istniejącego ID
+  # Return data for the existing ID
   return(.history_env$conversations[[active_id]])
 }
 
-#' Pobiera historię czatu dla aktywnej konwersacji
-#' @return Lista wiadomości lub pusta lista.
+#' Gets the chat history for the active conversation
+#' @return List of messages or an empty list.
 #' @export
 get_active_chat_history <- function() {
   active_conv <- get_active_conversation()
@@ -276,182 +299,183 @@ get_active_chat_history <- function() {
   return(active_conv$history %||% list())
 }
 
-#' Pobiera tytuł konwersacji o podanym ID
-#' @param id ID konwersacji.
-#' @return Tytuł (string) lub NULL, jeśli konwersacja nie istnieje lub nie ma tytułu.
+#' Gets the title of the conversation with the given ID
+#' @param id Conversation ID.
+#' @return Title (string) or NULL if the conversation doesn't exist or has no title.
 #' @export
 get_conversation_title <- function(id) {
   if (!id %in% names(.history_env$conversations)) {
-    # warning("Próba pobrania tytułu dla nieistniejącej konwersacji: ", id)
+    # warning("Attempting to get title for non-existent conversation: ", id)
     return(NULL)
   }
-  # Dostęp do tytułu
-  return(.history_env$conversations[[id]]$title %||% paste("[Brak tytułu - ID:", id, "]"))
+  # Access the title
+  # Default title placeholder translated
+  return(.history_env$conversations[[id]]$title %||% paste("[No Title - ID:", id, "]"))
 }
 
-#' Pobiera listę ID wszystkich istniejących konwersacji
-#' @return Wektor znakowy z ID konwersacji.
+#' Gets a list of IDs of all existing conversations
+#' @return Character vector with conversation IDs.
 #' @export
 get_all_conversation_ids <- function() {
   return(names(.history_env$conversations))
 }
 
-#' Pobiera nazwę modelu dla konwersacji o podanym ID
-#' @param id ID konwersacji.
-#' @return Nazwa modelu (string) lub NULL.
+#' Gets the model name for the conversation with the given ID
+#' @param id Conversation ID.
+#' @return Model name (string) or NULL.
 #' @export
 get_conversation_model <- function(id) {
   if (!id %in% names(.history_env$conversations)) return(NULL)
-  # Dostęp do modelu
+  # Access the model
   return(.history_env$conversations[[id]]$model %||% "gpt-4o") # Fallback
 }
 
-#' Ustawia model dla konwersacji, jeśli nie została rozpoczęta
+#' Sets the model for the conversation, if it hasn't started
 #'
-#' Sprawdza flagę `model_locked` ustawianą po pierwszej odpowiedzi asystenta.
+#' Checks the `model_locked` flag set after the first assistant response.
 #'
-#' @param id ID konwersacji.
-#' @param model_name Nazwa nowego modelu.
-#' @return TRUE jeśli model został ustawiony, FALSE w przeciwnym razie.
+#' @param id Conversation ID.
+#' @param model_name Name of the new model.
+#' @return TRUE if the model was set, FALSE otherwise.
 #' @export
 set_conversation_model <- function(id, model_name) {
   if (!id %in% names(.history_env$conversations)) {
-    warning("Próba ustawienia modelu dla nieistniejącej konwersacji: ", id)
+    warning("Attempting to set model for non-existent conversation: ", id)
     return(FALSE)
   }
   if (is_conversation_started(id)) {
-    warning("Nie można zmienić modelu - konwersacja została już rozpoczęta.", call. = FALSE)
+    warning("Cannot change model - conversation has already started.", call. = FALSE)
     return(FALSE)
   }
-  # Walidacja modelu (opcjonalne, ale dobre)
+  # Model validation (optional, but good practice)
   if (exists("available_openai_models") && !model_name %in% available_openai_models) {
-    warning(paste("Próba ustawienia niedostępnego modelu:", model_name, "dla konwersacji", id))
+    warning(paste("Attempting to set unavailable model:", model_name, "for conversation", id))
     return(FALSE)
   }
 
-  # Ustawienie modelu
+  # Set the model
   .history_env$conversations[[id]]$model <- model_name
-  message(paste("Ustawiono model dla konwersacji", id, "na:", model_name))
+  message(paste("Set model for conversation", id, "to:", model_name))
   return(TRUE)
 }
 
 
-# --- NOWE FUNKCJE ---
+# --- NEW FUNCTIONS ---
 
-#' Ustawia temperaturę dla konwersacji o podanym ID
-#' @param id ID konwersacji.
-#' @param temperature Nowa wartość temperatury (liczba 0-1).
-#' @return TRUE jeśli ustawiono, FALSE jeśli konwersacja nie istnieje lub wartość jest nieprawidłowa.
+#' Sets the temperature for the conversation with the given ID
+#' @param id Conversation ID.
+#' @param temperature New temperature value (number 0-1).
+#' @return TRUE if set, FALSE if conversation doesn't exist or value is invalid.
 #' @export
 set_conversation_temperature <- function(id, temperature) {
   if (!id %in% names(.history_env$conversations)) {
-    warning("Próba ustawienia temperatury dla nieistniejącej konwersacji: ", id)
+    warning("Attempting to set temperature for non-existent conversation: ", id)
     return(FALSE)
   }
   if (!is.numeric(temperature) || temperature < 0 || temperature > 1) {
-    warning(paste("Nieprawidłowa wartość temperatury:", temperature))
+    warning(paste("Invalid temperature value:", temperature))
     return(FALSE)
   }
-  # Ustawienie temperatury
+  # Set temperature
   .history_env$conversations[[id]]$temperature <- temperature
-  # message(paste("Ustawiono temperaturę dla konwersacji", id, "na:", temperature)) # Mniej gadatliwe
+  # message(paste("Set temperature for conversation", id, "to:", temperature)) # Less verbose
   return(TRUE)
 }
 
-#' Ustawia komunikat systemowy dla konwersacji o podanym ID
-#' @param id ID konwersacji.
-#' @param message Nowy komunikat systemowy (string).
-#' @return TRUE jeśli ustawiono, FALSE jeśli konwersacja nie istnieje lub wartość jest nieprawidłowa.
+#' Sets the system message for the conversation with the given ID
+#' @param id Conversation ID.
+#' @param message New system message (string).
+#' @return TRUE if set, FALSE if conversation doesn't exist or value is invalid.
 #' @export
 set_conversation_system_message <- function(id, message) {
   if (!id %in% names(.history_env$conversations)) {
-    warning("Próba ustawienia komunikatu systemowego dla nieistniejącej konwersacji: ", id)
+    warning("Attempting to set system message for non-existent conversation: ", id)
     return(FALSE)
   }
   if (!is.character(message) || length(message) != 1) {
-    warning("Nieprawidłowy format komunikatu systemowego.")
+    warning("Invalid system message format.")
     return(FALSE)
   }
-  # Ustawienie komunikatu
+  # Set message
   .history_env$conversations[[id]]$system_message <- message
-  # message(paste("Ustawiono komunikat systemowy dla konwersacji", id)) # Mniej gadatliwe
+  # message(paste("Set system message for conversation", id)) # Less verbose
   return(TRUE)
 }
 
-#' Pobiera historię czatu dla konwersacji o podanym ID
-#' @param id ID konwersacji.
-#' @return Lista wiadomości lub NULL, jeśli konwersacja nie istnieje.
+#' Gets the chat history for the conversation with the given ID
+#' @param id Conversation ID.
+#' @return List of messages or NULL if conversation doesn't exist.
 #' @export
 get_conversation_history <- function(id) {
   if (!id %in% names(.history_env$conversations)) return(NULL)
   return(.history_env$conversations[[id]]$history %||% list())
 }
 
-#' Pobiera listę załączników dla konwersacji o podanym ID
-#' @param id ID konwersacji.
-#' @return Lista załączników lub NULL, jeśli konwersacja nie istnieje.
+#' Gets the list of attachments for the conversation with the given ID
+#' @param id Conversation ID.
+#' @return List of attachments or NULL if conversation doesn't exist.
 #' @export
 get_conversation_attachments <- function(id) {
   if (!id %in% names(.history_env$conversations)) return(NULL)
   return(.history_env$conversations[[id]]$attachments %||% list())
 }
 
-#' Pobiera pełny obiekt danych konwersacji o podanym ID
-#' @param id ID konwersacji.
-#' @return Lista z danymi konwersacji lub NULL, jeśli nie istnieje.
+#' Gets the full conversation data object for the given ID
+#' @param id Conversation ID.
+#' @return List with conversation data or NULL if it doesn't exist.
 #' @export
 get_conversation_data <- function(id) {
   if (!id %in% names(.history_env$conversations)) return(NULL)
   return(.history_env$conversations[[id]])
 }
 
-# --- KONIEC NOWYCH FUNKCJI ---
+# --- END OF NEW FUNCTIONS ---
 
 
-#' Resetuje cały stan menedżera historii
+#' Resets the entire state of the history manager
 #' @return Invisible NULL.
 #' @export
 reset_history_manager <- function() {
-  message("Resetowanie menedżera historii...")
+  message("Resetting history manager...")
   .history_env$conversations <- list()
   .history_env$active_conversation_id <- NULL
   .history_env$conversation_counter <- 0
   invisible(NULL)
 }
 
-#' Dodaje załącznik do aktywnej konwersacji
-#' @param name Nazwa pliku załącznika.
-#' @param content Treść pliku jako string.
-#' @return TRUE jeśli dodano, FALSE jeśli plik o tej nazwie już istnieje lub brak aktywnej konwersacji.
+#' Adds an attachment to the active conversation
+#' @param name Name of the attachment file.
+#' @param content File content as a string.
+#' @return TRUE if added, FALSE if a file with this name already exists or no active conversation.
 #' @export
 add_attachment_to_active_conversation <- function(name, content) {
   active_id <- get_active_conversation_id()
   if (is.null(active_id)) {
-    warning("Nie można dodać załącznika, brak aktywnej konwersacji.")
+    warning("Cannot add attachment, no active conversation.")
     return(FALSE)
   }
   if (!active_id %in% names(.history_env$conversations)) {
-    warning(paste("Aktywna konwersacja (ID:", active_id, ") nie istnieje w momencie dodawania załącznika."))
+    warning(paste("Active conversation (ID:", active_id, ") does not exist when adding attachment."))
     return(FALSE)
   }
 
   conv_attachments <- .history_env$conversations[[active_id]]$attachments %||% list()
 
-  # Sprawdź, czy plik o tej nazwie już istnieje
+  # Check if a file with this name already exists
   if (any(sapply(conv_attachments, function(att) !is.null(att$name) && att$name == name))) {
-    message(paste("Plik o nazwie", name, "już istnieje w konwersacji", active_id, ". Nie dodaję ponownie."))
-    return(FALSE) # Zwróć FALSE, aby UI wiedziało, że nie dodano
+    message(paste("File named", name, "already exists in conversation", active_id, ". Not adding again."))
+    return(FALSE) # Return FALSE so UI knows it wasn't added
   }
 
   new_attachment <- list(name = name, content = content)
   .history_env$conversations[[active_id]]$attachments <- c(conv_attachments, list(new_attachment))
-  message(paste("Dodano załącznik", name, "do konwersacji", active_id))
+  message(paste("Added attachment", name, "to conversation", active_id))
 
   return(TRUE)
 }
 
-#' Pobiera listę załączników dla aktywnej konwersacji
-#' @return Lista załączników lub pusta lista.
+#' Gets the list of attachments for the active conversation
+#' @return List of attachments or an empty list.
 #' @export
 get_active_conversation_attachments <- function() {
   active_conv <- get_active_conversation()
@@ -461,7 +485,7 @@ get_active_conversation_attachments <- function() {
   return(active_conv$attachments %||% list())
 }
 
-# Helper %||% (może być zdefiniowany globalnie)
+# Helper %||% (can be defined globally)
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }

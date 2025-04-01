@@ -2,18 +2,18 @@
 % Please edit documentation in R/history_menager.R
 \name{set_conversation_system_message}
 \alias{set_conversation_system_message}
-\title{Ustawia komunikat systemowy dla konwersacji o podanym ID}
+\title{Sets the system message for the conversation with the given ID}
 \usage{
 set_conversation_system_message(id, message)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 
-\item{message}{Nowy komunikat systemowy (string).}
+\item{message}{New system message (string).}
 }
 \value{
-TRUE jeśli ustawiono, FALSE jeśli konwersacja nie istnieje lub wartość jest nieprawidłowa.
+TRUE if set, FALSE if conversation doesn't exist or value is invalid.
 }
 \description{
-Ustawia komunikat systemowy dla konwersacji o podanym ID
+Sets the system message for the conversation with the given ID
 }

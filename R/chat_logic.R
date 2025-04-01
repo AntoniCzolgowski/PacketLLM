@@ -1,33 +1,33 @@
 # chat_logic.R
 
-#' Dodanie wiadomości użytkownika do aktywnej konwersacji
+#' Add user message to the active conversation
 #'
-#' Wywołuje add_message_to_active_history, która blokuje model po pierwszej wiadomości.
+#' Calls add_message_to_active_history, which locks the model after the first message.
 #'
-#' @param text Tekst wiadomości użytkownika.
+#' @param text The user's message text.
 #' @return Invisible NULL
 #' @export
 add_user_message <- function(text) {
   if (!is.character(text) || length(text) != 1) {
-    stop("Tekst wiadomości musi być pojedynczym łańcuchem znaków.")
+    stop("Message text must be a single character string.")
   }
-  # Wywołanie funkcji z history_manager, która obsługuje aktywną konwersację i blokadę modelu
+  # Call the function from history_manager, which handles the active conversation and model locking
   add_message_to_active_history(role = "user", content = text)
   invisible(NULL)
 }
 
-#' Pobranie odpowiedzi asystenta dla aktywnej konwersacji
+#' Get assistant response for the active conversation
 #'
-#' Wysyła historię do API. Dla modeli `o1` i `o3-mini` wysyła tylko role
-#' 'user' i 'assistant', ignoruje temperaturę, komunikat systemowy i załączniki.
-#' Dla pozostałych modeli używa pełnych ustawień konwersacji.
+#' Sends the history to the API. For models `o1` and `o3-mini`, it sends only
+#' 'user' and 'assistant' roles, ignores temperature, system message, and attachments.
+#' For other models, it uses the full conversation settings.
 #'
-#' @return Tekst odpowiedzi asystenta lub komunikat o błędzie.
+#' @return Assistant's response text or an error message.
 #' @export
 get_assistant_response <- function() {
   active_conv <- get_active_conversation()
   if (is.null(active_conv)) {
-    error_content <- "Błąd krytyczny: Brak aktywnej konwersacji do przetworzenia."
+    error_content <- "Critical Error: No active conversation to process."
     warning(error_content)
     return(error_content)
   }
@@ -35,121 +35,124 @@ get_assistant_response <- function() {
   conversation_history <- active_conv$history %||% list()
   attachments <- active_conv$attachments %||% list()
   conversation_temp <- active_conv$temperature %||% 0.5
-  conversation_system_message <- active_conv$system_message %||% "Jesteś pomocnym asystentem."
+  # Default system message translated
+  conversation_system_message <- active_conv$system_message %||% "You are a helpful assistant."
   conversation_model <- active_conv$model %||% "gpt-4o"
 
-  message(paste("Przygotowuję zapytanie do API dla modelu:", conversation_model))
+  message(paste("Preparing API request for model:", conversation_model))
 
-  # ZMIANA: Logika warunkowa dla modeli o1/o3-mini
-  simplified_models <- c("o1", "o3-mini")
+  # CHANGE: Conditional logic for o1/o3-mini models
+  simplified_models <- c("o1", "o3-mini") # Already defined in openai_api.R, but kept here for clarity if run standalone
   use_simplified_logic <- conversation_model %in% simplified_models
 
   api_messages <- list()
   temp_to_use <- conversation_temp
 
   if (use_simplified_logic) {
-    message("Używam uproszczonej logiki dla modelu ", conversation_model, ": tylko role user/assistant, ignoruję temp, sys_msg, załączniki.")
+    message("Using simplified logic for model ", conversation_model, ": only user/assistant roles, ignoring temp, sys_msg, attachments.")
 
-    # Filtruj historię, zachowując tylko role user i assistant
+    # Filter history, keeping only user and assistant roles
     api_messages <- Filter(function(msg) msg$role %in% c("user", "assistant"), conversation_history)
 
-    # Ustaw domyślną temperaturę (API może wymagać jakiejś wartości)
-    temp_to_use <- 0.5 # Lub inna domyślna, np. 0
+    # Set default temperature (API might require some value)
+    temp_to_use <- 0.5 # Or another default, e.g., 0
 
-    # Sprawdź, czy po filtracji cokolwiek zostało i czy ostatnia wiadomość jest od użytkownika
+    # Check if anything remains after filtering and if the last message is from the user
     last_msg_index_simple <- length(api_messages)
     if (last_msg_index_simple == 0 || api_messages[[last_msg_index_simple]]$role != "user") {
-      # Jeśli historia jest pusta lub ostatnia wiadomość nie jest od użytkownika,
-      # a oczekujemy odpowiedzi, to jest to sytuacja problematyczna dla tych modeli.
-      # Możemy albo dodać placeholder, albo zgłosić błąd. Dodajmy placeholder.
-      placeholder_text <- "(Oczekuję na odpowiedź)" # Prostszy placeholder
+      # If history is empty or the last message is not from the user,
+      # and we expect a response, this is problematic for these models.
+      # We can either add a placeholder or report an error. Let's add a placeholder.
+      placeholder_text <- "(Awaiting response)" # Simpler placeholder
       api_messages[[length(api_messages) + 1]] <- list(role = "user", content = placeholder_text)
-      message("Dodano zastępczą wiadomość użytkownika dla uproszczonego modelu.")
+      message("Added placeholder user message for simplified model.")
     }
 
   } else {
-    # Logika dla modeli standardowych (gpt-4o, gpt-4o-mini, etc.) - jak poprzednio
-    message("Używam standardowej logiki dla modelu ", conversation_model)
-    api_messages <- conversation_history # Zaczynamy od pełnej historii
+    # Logic for standard models (gpt-4o, gpt-4o-mini, etc.) - as before
+    message("Using standard logic for model ", conversation_model)
+    api_messages <- conversation_history # Start with the full history
 
-    # Obsługa komunikatu systemowego
+    # Handle system message
     if (length(api_messages) == 0 || api_messages[[1]]$role != "system") {
-      message("Ostrzeżenie: Historia czatu nie zaczyna się od wiadomości systemowej. Dodaję teraz.")
+      # System message added here is the default one, the specific one is set below
+      message("Warning: Chat history does not start with a system message. Adding the conversation-specific one now.")
       api_messages <- c(list(list(role = "system", content = conversation_system_message)), api_messages)
     } else {
-      api_messages[[1]]$content <- conversation_system_message # Zawsze używaj aktualnego z ustawień
-      message("Używam komunikatu systemowego specyficznego dla konwersacji.")
+      api_messages[[1]]$content <- conversation_system_message # Always use the current one from settings
+      message("Using conversation-specific system message.")
     }
 
-    # Obsługa załączników (tylko dla modeli standardowych)
+    # Handle attachments (only for standard models)
     if (length(attachments) > 0) {
-      message("Dołączam kontekst ", length(attachments), " załączników.")
+      message("Including context from ", length(attachments), " attachments.")
       attachments_text <- ""
       for (att in attachments) {
         attachments_text <- paste0(
           attachments_text,
-          "\n\n--- POCZĄTEK ZAŁĄCZNIKA: ", att$name, " ---\n",
+          "\n\n--- START OF ATTACHMENT: ", att$name, " ---\n",
           att$content,
-          "\n--- KONIEC ZAŁĄCZNIKA: ", att$name, " ---"
+          "\n--- END OF ATTACHMENT: ", att$name, " ---"
         )
       }
       base_system_content <- api_messages[[1]]$content
       api_messages[[1]]$content <- paste0(
         base_system_content,
-        "\n\n--- KONTEKST ZAŁĄCZONYCH PLIKÓW (DOSTĘPNY DLA CIEBIE W TEJ ROZMOWIE) ---",
+        "\n\n--- ATTACHED FILES CONTEXT (AVAILABLE TO YOU IN THIS CONVERSATION) ---",
         attachments_text,
-        "\n--- KONIEC KONTEKSTU ZAŁĄCZONYCH PLIKÓW ---"
+        "\n--- END OF ATTACHED FILES CONTEXT ---"
       )
-      message("Dołączono treść załączników do wiadomości systemowej dla API.")
+      message("Appended attachment content to the system message for the API.")
     } else {
-      message("Brak załączników do dołączenia.")
+      message("No attachments to include.")
     }
 
-    # Sprawdzenie ostatniej wiadomości (jak poprzednio)
+    # Check the last message (as before)
     last_msg_index_standard <- length(api_messages)
     if (last_msg_index_standard == 0 || api_messages[[last_msg_index_standard]]$role != "user") {
-      placeholder_text <- "(Użytkownik oczekuje na odpowiedź na podstawie dostępnego kontekstu)"
+      placeholder_text <- "(User is awaiting a response based on the available context)"
       api_messages[[length(api_messages) + 1]] <- list(role = "user", content = placeholder_text)
-      message("Dodano zastępczą wiadomość użytkownika na potrzeby wywołania API.")
+      message("Added placeholder user message for the API call.")
     }
-  } # Koniec logiki warunkowej dla modeli
+  } # End of conditional logic for models
 
-  # Sprawdzenie, czy mamy jakiekolwiek wiadomości do wysłania
+  # Check if we have any messages to send
   if(length(api_messages) == 0) {
-    error_content <- "Brak historii do wysłania do API po przetworzeniu."
+    error_content <- "No history to send to the API after processing."
     warning(error_content)
-    # Można dodać błąd do historii widocznej
+    # Add error to visible history
     active_id_for_error <- get_active_conversation_id()
     if (!is.null(active_id_for_error) && active_id_for_error %in% names(.history_env$conversations)) {
-      tryCatch(add_message_to_active_history(role = "system", content = paste("Błąd:", error_content)), error=function(e2){})
+      tryCatch(add_message_to_active_history(role = "system", content = paste("Error:", error_content)), error=function(e2){})
     }
     return(error_content)
   }
 
 
-  # Wywołanie API OpenAI z przygotowanymi wiadomościami i temperaturą
+  # Call OpenAI API with prepared messages and temperature
   response_text <- tryCatch({
     call_openai_chat(api_messages, model = conversation_model, temperature = temp_to_use)
   }, error = function(e) {
-    error_message <- paste("Błąd API:", e$message)
+    error_message <- paste("API Error:", e$message)
     warning(error_message)
-    # Zapis błędu do historii (jak poprzednio)
+    # Save error to history (as before)
     active_id_for_error <- get_active_conversation_id()
     if (!is.null(active_id_for_error) && active_id_for_error %in% names(.history_env$conversations)) {
       tryCatch(add_message_to_active_history(role = "system", content = error_message), error=function(e2){
-        warning(paste("Nie udało się zapisać błędu API do historii:", e2$message))
+        warning(paste("Failed to save API error to history:", e2$message))
       })
     }
     return(error_message)
   })
 
-  # Dodanie odpowiedzi asystenta do historii (jak poprzednio)
-  if (!grepl("^Błąd(:| API:)", response_text)) { # Poprawione sprawdzenie błędu
+  # Add assistant's response to history (as before)
+  # Updated error check to be case-insensitive and match English "Error"
+  if (!grepl("^Error(:| API:)", response_text, ignore.case = TRUE)) {
     active_id_for_response <- get_active_conversation_id()
     if (!is.null(active_id_for_response) && active_id_for_response %in% names(.history_env$conversations)) {
       add_message_to_active_history(role = "assistant", content = response_text)
     } else {
-      warning("Otrzymano odpowiedź API, ale aktywna konwersacja już nie istnieje lub nie jest ustawiona.")
+      warning("Received API response, but the active conversation no longer exists or is not set.")
     }
   }
 

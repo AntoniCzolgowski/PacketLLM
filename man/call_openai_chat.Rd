@@ -2,21 +2,21 @@
 % Please edit documentation in R/openai_api.R
 \name{call_openai_chat}
 \alias{call_openai_chat}
-\title{Wywołanie API OpenAI}
+\title{Call OpenAI API}
 \usage{
 call_openai_chat(messages, model, temperature = 0.5)
 }
 \arguments{
-\item{messages}{Lista wiadomości (każda wiadomość to lista z polami 'role' i 'content').}
+\item{messages}{List of messages (each message is a list with 'role' and 'content' fields).}
 
-\item{model}{Model OpenAI do użycia.}
+\item{model}{OpenAI model to use.}
 
-\item{temperature}{Parametr temperatury (używany tylko dla modeli, które go obsługują).}
+\item{temperature}{Temperature parameter (used only for models that support it).}
 }
 \value{
-Łańcuch znaków zawierający odpowiedź modelu.
+Character string containing the model's response.
 }
 \description{
-Funkcja wysyła historię konwersacji do API OpenAI i zwraca odpowiedź modelu.
-Dla modeli z \code{simplified_models_list} NIE wysyła parametru \code{temperature}.
+Function sends the conversation history to the OpenAI API and returns the model's response.
+For models in \code{simplified_models_list}, it does NOT send the \code{temperature} parameter.
 }

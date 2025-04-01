@@ -7,7 +7,7 @@ Description: Pakiet PacketLLM umożliwia integrację modeli językowych OpenAI
     z RStudio. Ułatwia wgrywanie plików (R, PDF, DOCX) oraz prowadzenie interaktywnych 
     konwersacji z modelem, pozwalając na generowanie kodu R oraz analizę treści dokumentów 
     przy użyciu API OpenAI.
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

@@ -2,13 +2,13 @@
 % Please edit documentation in R/llm_chat_app.R
 \name{run_llm_chat_app}
 \alias{run_llm_chat_app}
-\title{Uruchomienie Aplikacji Czat LLM w Oknie RStudio}
+\title{Run the LLM Chat Application in RStudio Window}
 \usage{
 run_llm_chat_app()
 }
 \description{
-Uruchamia aplikację Shiny jako Gadget w panelu Viewer RStudio,
-skąd można ją otworzyć w osobnym oknie ("Show in new window").
-Aplikacja pozwala na interakcję z modelami LLM, zarządzanie konwersacjami,
-załącznikami i ustawieniami, nie blokując konsoli RStudio po otwarciu w nowym oknie.
+Launches the Shiny application as a Gadget in the RStudio Viewer pane,
+from where it can be opened in a separate window ("Show in new window").
+The application allows interaction with LLM models, managing conversations,
+attachments, and settings, without blocking the RStudio console when opened in a new window.
 }

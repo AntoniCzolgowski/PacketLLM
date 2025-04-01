@@ -2,18 +2,18 @@
 % Please edit documentation in R/history_menager.R
 \name{set_conversation_model}
 \alias{set_conversation_model}
-\title{Ustawia model dla konwersacji, jeśli nie została rozpoczęta}
+\title{Sets the model for the conversation, if it hasn't started}
 \usage{
 set_conversation_model(id, model_name)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 
-\item{model_name}{Nazwa nowego modelu.}
+\item{model_name}{Name of the new model.}
 }
 \value{
-TRUE jeśli model został ustawiony, FALSE w przeciwnym razie.
+TRUE if the model was set, FALSE otherwise.
 }
 \description{
-Sprawdza flagę \code{model_locked} ustawianą po pierwszej odpowiedzi asystenta.
+Checks the \code{model_locked} flag set after the first assistant response.
 }

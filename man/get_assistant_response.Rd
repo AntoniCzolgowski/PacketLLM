@@ -2,15 +2,15 @@
 % Please edit documentation in R/chat_logic.R
 \name{get_assistant_response}
 \alias{get_assistant_response}
-\title{Pobranie odpowiedzi asystenta dla aktywnej konwersacji}
+\title{Get assistant response for the active conversation}
 \usage{
 get_assistant_response()
 }
 \value{
-Tekst odpowiedzi asystenta lub komunikat o błędzie.
+Assistant's response text or an error message.
 }
 \description{
-Wysyła historię do API. Dla modeli \code{o1} i \code{o3-mini} wysyła tylko role
-'user' i 'assistant', ignoruje temperaturę, komunikat systemowy i załączniki.
-Dla pozostałych modeli używa pełnych ustawień konwersacji.
+Sends the history to the API. For models \code{o1} and \code{o3-mini}, it sends only
+'user' and 'assistant' roles, ignores temperature, system message, and attachments.
+For other models, it uses the full conversation settings.
 }

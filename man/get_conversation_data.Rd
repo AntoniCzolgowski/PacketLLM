@@ -2,16 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_data}
 \alias{get_conversation_data}
-\title{Pobiera pełny obiekt danych konwersacji o podanym ID}
+\title{Gets the full conversation data object for the given ID}
 \usage{
 get_conversation_data(id)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 }
 \value{
-Lista z danymi konwersacji lub NULL, jeśli nie istnieje.
+List with conversation data or NULL if it doesn't exist.
 }
 \description{
-Pobiera pełny obiekt danych konwersacji o podanym ID
+Gets the full conversation data object for the given ID
 }

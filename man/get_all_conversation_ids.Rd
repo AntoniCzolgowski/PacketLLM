@@ -2,13 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_all_conversation_ids}
 \alias{get_all_conversation_ids}
-\title{Pobiera listę ID wszystkich istniejących konwersacji}
+\title{Gets a list of IDs of all existing conversations}
 \usage{
 get_all_conversation_ids()
 }
 \value{
-Wektor znakowy z ID konwersacji.
+Character vector with conversation IDs.
 }
 \description{
-Pobiera listę ID wszystkich istniejących konwersacji
+Gets a list of IDs of all existing conversations
 }

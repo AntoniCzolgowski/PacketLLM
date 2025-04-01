@@ -2,16 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{delete_conversation}
 \alias{delete_conversation}
-\title{Usuwa konwersację o podanym ID}
+\title{Deletes the conversation with the given ID}
 \usage{
 delete_conversation(id)
 }
 \arguments{
-\item{id}{ID konwersacji do usunięcia.}
+\item{id}{ID of the conversation to delete.}
 }
 \value{
-TRUE jeśli usunięto, FALSE jeśli nie istniała.
+TRUE if deleted, FALSE if it did not exist.
 }
 \description{
-Usuwa konwersację o podanym ID
+Deletes the conversation with the given ID
 }

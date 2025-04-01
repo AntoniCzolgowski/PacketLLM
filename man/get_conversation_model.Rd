@@ -2,16 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_model}
 \alias{get_conversation_model}
-\title{Pobiera nazwę modelu dla konwersacji o podanym ID}
+\title{Gets the model name for the conversation with the given ID}
 \usage{
 get_conversation_model(id)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 }
 \value{
-Nazwa modelu (string) lub NULL.
+Model name (string) or NULL.
 }
 \description{
-Pobiera nazwę modelu dla konwersacji o podanym ID
+Gets the model name for the conversation with the given ID
 }

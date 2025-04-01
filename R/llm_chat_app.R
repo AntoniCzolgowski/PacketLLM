@@ -1,11 +1,11 @@
 # llm_chat_app.R
 
-#' Uruchomienie Aplikacji Czat LLM w Oknie RStudio
+#' Run the LLM Chat Application in RStudio Window
 #'
-#' Uruchamia aplikację Shiny jako Gadget w panelu Viewer RStudio,
-#' skąd można ją otworzyć w osobnym oknie ("Show in new window").
-#' Aplikacja pozwala na interakcję z modelami LLM, zarządzanie konwersacjami,
-#' załącznikami i ustawieniami, nie blokując konsoli RStudio po otwarciu w nowym oknie.
+#' Launches the Shiny application as a Gadget in the RStudio Viewer pane,
+#' from where it can be opened in a separate window ("Show in new window").
+#' The application allows interaction with LLM models, managing conversations,
+#' attachments, and settings, without blocking the RStudio console when opened in a new window.
 #'
 #' @export
 #' @import shiny shinyjs future promises httr pdftools readtext tools
@@ -13,12 +13,12 @@
 #' @importFrom stats setNames
 run_llm_chat_app <- function() {
 
-  # --- Zasoby pakietu ---
-  # Zakładamy, że available_openai_models i simplified_models_list są dostępne
+  # --- Package Resources ---
+  # Assume available_openai_models and simplified_models_list are available
 
-  # --- Definicja UI (BEZ ZMIAN) ---
+  # --- UI Definition (TEXTS TRANSLATED) ---
   ui <- fluidPage(
-    title = "Czat LLM",
+    title = "LLM Chat", # Translated title
     useShinyjs(),
     tags$head(
       tags$script(HTML("
@@ -47,11 +47,13 @@ run_llm_chat_app <- function() {
                el.val(null);
                console.log('JS: Reset value of file input #' + message.id);
             } else {
-               console.warn('JS Reset: Nie znaleziono elementu: #' + message.id);
+               // Translated JS warning
+               console.warn('JS Reset: Element not found: #' + message.id);
             }
           });
         });
       ")),
+      # CSS styles remain the same
       tags$style(HTML("
         body { padding-top: 50px; font-family: sans-serif; }
         .navbar.navbar-default.navbar-fixed-top { border-width: 0 0 1px; min-height: 40px; margin-bottom: 10px; background-color: #ffffff; border-color: #ddd; padding-left: 0; padding-right: 0; }
@@ -82,11 +84,12 @@ run_llm_chat_app <- function() {
     tags$nav(class = "navbar navbar-default navbar-fixed-top",
              tags$div(class = "container-fluid",
                       tags$div(class = "navbar-header",
-                               tags$span(class = "navbar-brand", "Czat LLM")
+                               tags$span(class = "navbar-brand", "LLM Chat") # Translated brand
                       ),
                       tags$div(class = "navbar-right",
-                               actionButton("advanced_settings_btn", "Ustawienia", class = "btn-default btn-sm"),
-                               actionButton("new_chat_btn", "Nowa Konwersacja", class = "btn-primary btn-sm")
+                               # Translated button labels
+                               actionButton("advanced_settings_btn", "Settings", class = "btn-default btn-sm"),
+                               actionButton("new_chat_btn", "New Conversation", class = "btn-primary btn-sm")
                       )
              )
     ),
@@ -98,30 +101,31 @@ run_llm_chat_app <- function() {
     )
   )
 
-  # --- Definicja Server ---
+  # --- Server Definition (MESSAGES/NOTIFICATIONS TRANSLATED) ---
   server <- function(input, output, session) {
 
-    # --- Inicjalizacja Stanu Aplikacji ---
-    initial_conv_id <- initialize_history_manager()
+    # --- Application State Initialization ---
+    initial_conv_id <- initialize_history_manager() # Assumes history_manager is translated
     active_conv_id_rv <- reactiveVal(NULL)
     open_tab_ids_rv <- reactiveVal(character(0))
     first_tab_created <- reactiveVal(FALSE)
     processing_state <- reactiveValues()
     file_upload_context_rv <- reactiveVal(NULL)
-    # NOWE: ReactiveVal do przechowywania plików STAGED dla każdej konwersacji
-    staged_attachments_rv <- reactiveVal(list()) # Klucz: conv_id, Wartość: wektor nazw plików
+    # NEW: ReactiveVal to store STAGED files for each conversation
+    staged_attachments_rv <- reactiveVal(list()) # Key: conv_id, Value: vector of filenames
 
-    # --- Funkcje Pomocnicze UI/Logiki ---
+    # --- UI/Logic Helper Functions ---
     create_and_append_new_tab <- function(conv_id, select_tab = TRUE) {
-      conv_title <- get_conversation_title(conv_id) %||% paste("ID:", conv_id)
+      conv_title <- get_conversation_title(conv_id) %||% paste("ID:", conv_id) # Assumes get_conversation_title provides English default
       processing_state[[conv_id]] <- FALSE
-      # Inicjalizacja pustej listy staged dla nowej konwersacji
+      # Initialize empty staged list for the new conversation
       current_staged <- staged_attachments_rv()
       current_staged[[conv_id]] <- list()
       staged_attachments_rv(current_staged)
       # -----
-      tab_content <- tryCatch({ create_tab_content_ui(conv_id) }, error = function(e) {
-        shiny::tagList( shiny::h4("Błąd ładowania UI dla konwersacji"), shiny::verbatimTextOutput(paste0("error_ui_", conv_id)) )
+      tab_content <- tryCatch({ create_tab_content_ui(conv_id) }, error = function(e) { # Assumes create_tab_content_ui is translated
+        # Translated error message
+        shiny::tagList( shiny::h4("Error loading UI for conversation"), shiny::verbatimTextOutput(paste0("error_ui_", conv_id)) )
         output[[paste0("error_ui_", conv_id)]] <- shiny::renderPrint(e)
       })
       insertTab( inputId = "chatTabs", tabPanel(
@@ -138,130 +142,141 @@ run_llm_chat_app <- function() {
       input_id <- NS(conv_id)("user_message_input")
       input_val <- isolate(input[[input_id]])
       has_text <- nzchar(trimws(input_val %||% ""))
-      # Sprawdź pliki w STAGING area
+      # Check files in STAGING area
       has_staged_files <- length(isolate(staged_attachments_rv()[[conv_id]]) %||% list()) > 0
-      conv_model <- get_conversation_model(conv_id)
-      if (is.null(conv_model)) { warning(paste("Brak modelu dla konwersacji ID:", conv_id, "w can_send_message.")); return(FALSE) }
-      if (conv_model %in% simplified_models_list) {
-        return(has_text) # Uproszczone modele nie obsługują plików
+      conv_model <- get_conversation_model(conv_id) # Assumes get_conversation_model is available
+      if (is.null(conv_model)) { warning(paste("No model found for conversation ID:", conv_id, "in can_send_message.")); return(FALSE) }
+      if (conv_model %in% simplified_models_list) { # Assumes simplified_models_list is available
+        return(has_text) # Simplified models don't support files
       } else {
-        return(has_text || has_staged_files) # Wyślij jeśli jest tekst LUB pliki w staging
+        return(has_text || has_staged_files) # Send if there's text OR staged files
       }
     }
     update_send_button_state <- function(conv_id) { req(conv_id); if(conv_id %in% open_tab_ids_rv()) { button_id_selector <- paste0("#", NS(conv_id)("send_query_btn")); can_send <- can_send_message(conv_id); if (can_send) { shinyjs::enable(selector = button_id_selector) } else { shinyjs::disable(selector = button_id_selector) } } }
     update_add_file_button_state <- function(conv_id) { req(conv_id); current_model <- get_conversation_model(conv_id); if(is.null(current_model)) return(); button_id_selector <- paste0("#", NS(conv_id)("add_file_btn")); if (current_model %in% simplified_models_list) { shinyjs::disable(selector = button_id_selector) } else { shinyjs::enable(selector = button_id_selector) } }
 
-    # --- Inicjalizacja Pierwszej Karty ---
+    # --- First Tab Initialization ---
     observeEvent(TRUE, {
       req(!first_tab_created())
-      message("SERVER: Inicjalizacja - Tworzę pierwszą kartę dla ID: ", initial_conv_id)
+      # Translated message
+      message("SERVER: Initialization - Creating first tab for ID: ", initial_conv_id)
       create_and_append_new_tab(initial_conv_id, select_tab = TRUE)
       first_tab_created(TRUE)
-      set_active_conversation(initial_conv_id)
+      set_active_conversation(initial_conv_id) # Assumes set_active_conversation is available
       active_conv_id_rv(initial_conv_id)
       ns <- NS(initial_conv_id)
+      # Assumes render_chat_history_ui and get_active_chat_history are translated/available
       output[[ns("chat_history_output")]] <- render_chat_history_ui(get_active_chat_history())
-      # Inicjalizacja pustej listy staged files UI
+      # Initialize empty staged files UI
+      # Assumes render_staged_attachments_list_ui is translated/available
       output[[ns("staged_files_list_output")]] <- render_staged_attachments_list_ui(list())
       update_send_button_state(initial_conv_id)
       update_add_file_button_state(initial_conv_id)
     }, once = TRUE, ignoreInit = FALSE)
 
-    # --- Główny Obserwator Zmiany Aktywnej Karty ---
+    # --- Main Observer for Active Tab Change ---
     observeEvent(input$chatTabs, {
       req(first_tab_created(), input$chatTabs)
       current_tab_id <- input$chatTabs
       if (current_tab_id %in% open_tab_ids_rv() && (is.null(active_conv_id_rv()) || current_tab_id != active_conv_id_rv())) {
-        message(paste("SERVER: Zmieniono aktywną kartę na ID:", current_tab_id))
+        # Translated message
+        message(paste("SERVER: Switched active tab to ID:", current_tab_id))
         set_active_conversation(current_tab_id)
         active_conv_id_rv(current_tab_id)
-        active_history <- get_conversation_history(current_tab_id)
-        # Pobierz STAGED pliki dla nowej karty
+        active_history <- get_conversation_history(current_tab_id) # Assumes get_conversation_history is available
+        # Get STAGED files for the new tab
         staged_files_for_tab <- isolate(staged_attachments_rv()[[current_tab_id]]) %||% list()
-        if(is.null(active_history)){ # Nie sprawdzamy już attachments tutaj
-          if (!current_tab_id %in% get_all_conversation_ids()) {
-            warning(paste("SERVER: Brak danych dla konwersacji", current_tab_id, "- prawdopodobnie usunięta."))
+        if(is.null(active_history)){ # No longer checking attachments here
+          if (!current_tab_id %in% get_all_conversation_ids()) { # Assumes get_all_conversation_ids is available
+            # Translated warning
+            warning(paste("SERVER: No data for conversation", current_tab_id, "- likely deleted."))
             return()
           }
           active_history <- list()
         }
         ns <- NS(current_tab_id)
         output[[ns("chat_history_output")]] <- render_chat_history_ui(active_history)
-        # Renderuj listę staged files dla tej karty
+        # Render the staged files list for this tab
         output[[ns("staged_files_list_output")]] <- render_staged_attachments_list_ui(staged_files_for_tab)
-        session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input")) # Czyści globalny input
+        session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input")) # Clears global input
         update_send_button_state(current_tab_id)
         update_add_file_button_state(current_tab_id)
       } else if (!current_tab_id %in% open_tab_ids_rv() && length(open_tab_ids_rv()) > 0) {
-        warning(paste("SERVER: Wybrana karta", current_tab_id, "nie jest już otwarta. Próbuję przełączyć na pierwszą dostępną."))
+        # Translated warning and message
+        warning(paste("SERVER: Selected tab", current_tab_id, "is no longer open. Attempting to switch to the first available."))
         first_available_tab <- open_tab_ids_rv()[1]
         if (!is.null(first_available_tab)) { updateTabsetPanel(session, "chatTabs", selected = first_available_tab) }
-        else { message("SERVER: Brak otwartych kart po zamknięciu nieaktywnej."); active_conv_id_rv(NULL); set_active_conversation(NULL) }
+        else { message("SERVER: No open tabs after closing an inactive one."); active_conv_id_rv(NULL); set_active_conversation(NULL) }
       } else if (length(open_tab_ids_rv()) == 0) {
-        message("SERVER: Brak otwartych kart.")
+        # Translated message
+        message("SERVER: No open tabs.")
         active_conv_id_rv(NULL)
         set_active_conversation(NULL)
       }
     }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-    # --- Obsługa Przycisków i Akcji ---
-    # 1. Nowa Konwersacja (Bez zmian)
+    # --- Button and Action Handling ---
+    # 1. New Conversation (No changes needed in logic, just messages/notifications)
     observeEvent(input$new_chat_btn, {
-      message("SERVER: Kliknięto 'Nowa Konwersacja'")
-      new_id <- create_new_conversation(activate = FALSE, add_initial_settings = TRUE)
-      create_and_append_new_tab(new_id, select_tab = TRUE) # To już inicjalizuje staged_attachments dla new_id
-      showNotification("Rozpoczęto nową rozmowę w nowej karcie.", type = "message", duration = 3)
+      # Translated message and notification
+      message("SERVER: Clicked 'New Conversation'")
+      new_id <- create_new_conversation(activate = FALSE, add_initial_settings = TRUE) # Assumes create_new_conversation is available
+      create_and_append_new_tab(new_id, select_tab = TRUE) # This already initializes staged_attachments for new_id
+      showNotification("Started a new conversation in a new tab.", type = "message", duration = 3)
     })
 
-    # 2. Wyślij Zapytanie (ZMIENIONE)
+    # 2. Send Query (CHANGED - Messages, Notifications, "Attached:" string)
     observeEvent(input$dynamic_send_click, {
       req(input$dynamic_send_click)
       conv_id <- input$dynamic_send_click$convId
       req(conv_id %in% open_tab_ids_rv())
-      message(paste("SERVER: Otrzymano kliknięcie Wyślij dla conv_id:", conv_id))
+      # Translated message
+      message(paste("SERVER: Received Send click for conv_id:", conv_id))
 
-      if (!can_send_message(conv_id)) return() # Sprawdza tekst LUB staged files
+      if (!can_send_message(conv_id)) return() # Checks text OR staged files
 
       processing_state[[conv_id]] <- TRUE
-      update_send_button_state(conv_id) # Wyłącz przycisk
+      update_send_button_state(conv_id) # Disable button
 
       input_id <- NS(conv_id)("user_message_input")
       user_text <- trimws(isolate(input[[input_id]]) %||% "")
-      # Pobierz pliki ze STAGING area dla tej konwersacji
+      # Get files from the STAGING area for this conversation
       staged_files_to_send <- isolate(staged_attachments_rv()[[conv_id]]) %||% list()
 
-      message(paste("SERVER (", conv_id, "): Przygotowuję wysłanie. Tekst: '", substr(user_text, 1, 50), "...'. Pliki w stagingu:", length(staged_files_to_send)))
+      # Translated message
+      message(paste("SERVER (", conv_id, "): Preparing to send. Text: '", substr(user_text, 1, 50), "...'. Files in staging:", length(staged_files_to_send)))
 
-      # Przygotuj finalną treść wiadomości
+      # Prepare final message content
       final_content <- user_text
       if (length(staged_files_to_send) > 0) {
         attachment_list_str <- paste("-", staged_files_to_send, collapse = "\n")
-        # Dodaj sekcję "Załączono" tylko jeśli jest tekst LUB same pliki
+        # Add "Attached:" section only if there's text OR just files
         if (nzchar(final_content)) {
-          # Dodano tagi <strong> wokół "Załączono:"
-          final_content <- paste0(final_content, "\n\n<strong>Załączono:</strong>\n", attachment_list_str)
+          # Added <strong> tags around "Attached:"
+          final_content <- paste0(final_content, "\n\n<strong>Attached:</strong>\n", attachment_list_str) # Translated "Załączono"
         } else {
-          # Dodano tagi <strong> wokół "Załączono:"
-          # Jeśli nie ma tekstu, a są pliki, wiadomość użytkownika to tylko informacja o plikach
-          final_content <- paste0("<strong>Załączono:</strong>\n", attachment_list_str)
+          # Added <strong> tags around "Attached:"
+          # If no text but files exist, user message is just the file info
+          final_content <- paste0("<strong>Attached:</strong>\n", attachment_list_str) # Translated "Załączono"
         }
       }
 
-      # Dodaj wiadomość do historii (już sformatowaną)
+      # Add message to history (already formatted)
       add_result <- NULL
       add_error <- FALSE
       original_active_conv_id_before_add <- get_active_conversation_id()
-      set_active_conversation(conv_id) # Ustaw jako aktywną na czas dodawania
+      set_active_conversation(conv_id) # Set as active for adding
 
-      # Sprawdź czy jest cokolwiek do wysłania (tekst lub pliki)
+      # Check if there's anything to send (text or files)
       if (nzchar(trimws(final_content))) {
         tryCatch({
-          # Używamy add_message_to_active_history bezpośrednio
+          # Use add_message_to_active_history directly (assumes it's available/translated)
           add_result <- add_message_to_active_history(role = "user", content = final_content)
           if (is.list(add_result) && !is.null(add_result$type) && add_result$type == "error") { stop(add_result$message) }
         }, error = function(e) {
-          showNotification(paste("Błąd dodawania wiadomości:", e$message), type = "error", duration=5)
-          message(paste("SERVER (", conv_id, ") Błąd add_message_to_active_history:", e$message))
+          # Translated notification and message
+          showNotification(paste("Error adding message:", e$message), type = "error", duration=5)
+          message(paste("SERVER (", conv_id, ") Error in add_message_to_active_history:", e$message))
           set_active_conversation(original_active_conv_id_before_add)
           processing_state[[conv_id]] <- FALSE
           update_send_button_state(conv_id)
@@ -269,39 +284,42 @@ run_llm_chat_app <- function() {
         })
         if(add_error) return()
 
-        # --- CZYSZCZENIE PO WYSŁANIU ---
-        # 1. Wyczyść pole tekstowe
+        # --- CLEANUP AFTER SENDING ---
+        # 1. Clear text input field
         updateTextAreaInput(session, input_id, value = "")
-        # 2. Wyczyść STAGED attachments dla tej konwersacji
+        # 2. Clear STAGED attachments for this conversation
         current_staged <- staged_attachments_rv()
-        current_staged[[conv_id]] <- list() # Ustaw na pustą listę
+        current_staged[[conv_id]] <- list() # Set to empty list
         staged_attachments_rv(current_staged)
-        # 3. Zaktualizuj UI listy staged files (powinno pokazać "Brak plików")
+        # 3. Update the staged files list UI (should show "No files")
         ns_render <- NS(conv_id)
         output[[ns_render("staged_files_list_output")]] <- render_staged_attachments_list_ui(list())
-        # --- KONIEC CZYSZCZENIA ---
+        # --- END CLEANUP ---
 
-        # Aktualizacja tytułu (jeśli to pierwsza wiadomość)
+        # Update title (if it was the first message)
         if (is.list(add_result) && !is.null(add_result$type) && add_result$type == "title_set") {
-          final_title <- add_result$new_title %||% "Rozmowa..."
+          final_title <- add_result$new_title %||% "Conversation..." # Assumes default title is English
           escaped_title <- gsub("'", "\\'", gsub("\"", "\\\"", final_title))
           shinyjs::runjs(sprintf( "$('#chatTabs a[data-value=\"%s\"] > span').contents().filter(function(){ return this.nodeType == 3; }).first().replaceWith('%s');", conv_id, escaped_title ))
-          message(paste("SERVER (", conv_id, "): UI zaktualizowane tytułem:", final_title))
+          # Translated message
+          message(paste("SERVER (", conv_id, "): UI title updated to:", final_title))
         }
       } else {
-        # Nic do wysłania (ani tekstu, ani plików w stagingu) - nie powinno się zdarzyć przez can_send_message
-        message(paste("SERVER (", conv_id, "): Nic do wysłania (brak tekstu i staged plików). Anulowano."))
+        # Nothing to send (no text, no staged files) - shouldn't happen due to can_send_message
+        # Translated message
+        message(paste("SERVER (", conv_id, "): Nothing to send (no text and no staged files). Cancelled."))
         set_active_conversation(original_active_conv_id_before_add)
         processing_state[[conv_id]] <- FALSE
-        update_send_button_state(conv_id) # Włącz ponownie, jeśli było zablokowane przez pomyłkę
+        update_send_button_state(conv_id) # Re-enable just in case it was wrongly disabled
         return()
       }
 
 
-      # Aktualizacja historii czatu w UI
+      # Update chat history in UI
       ns_render <- NS(conv_id)
       if (!conv_id %in% get_all_conversation_ids()) {
-        message(paste("SERVER (", conv_id, "): Konwersacja zniknęła po dodaniu wiadomości. Przerywam."))
+        # Translated message
+        message(paste("SERVER (", conv_id, "): Conversation disappeared after adding message. Aborting."))
         set_active_conversation(original_active_conv_id_before_add)
         processing_state[[conv_id]] <- FALSE
         update_send_button_state(conv_id)
@@ -311,7 +329,7 @@ run_llm_chat_app <- function() {
       if(is.null(current_history)) current_history <- list()
       output[[ns_render("chat_history_output")]] <- render_chat_history_ui(current_history)
 
-      # Przewijanie historii (bez zmian)
+      # Scroll history (no changes needed)
       chat_history_container_selector <- ".chat-history-container-class"
       if(isolate(active_conv_id_rv()) == conv_id) {
         js_code <- sprintf(
@@ -325,24 +343,29 @@ run_llm_chat_app <- function() {
         shinyjs::runjs(js_code)
       }
 
-      # Wywołanie API (bez zmian - używa get_conversation_attachments())
+      # Call API (uses get_conversation_attachments())
       notification_id <- paste0("api_call_indicator_", conv_id)
-      showNotification("Przetwarzanie zapytania...", id = notification_id, duration = NULL, type = "message")
+      # Translated notification
+      showNotification("Processing request...", id = notification_id, duration = NULL, type = "message")
       request_conv_id_main <- conv_id
       future({
-        set_active_conversation(request_conv_id_main) # Ustawiamy aktywną dla future
-        if (!request_conv_id_main %in% get_all_conversation_ids()) { warning(paste("FUTURE (Main -", request_conv_id_main, ") Konwersacja nie istnieje przed API call.")); stop("Konwersacja została usunięta.") }
-        # get_assistant_response użyje TRWAŁYCH załączników z get_conversation_attachments(request_conv_id_main)
-        response_text <- tryCatch({ get_assistant_response() }, error = function(e) { error_message <- paste("Błąd API w future:", e$message); warning(paste("FUTURE (Main -", request_conv_id_main, ")", error_message)); return(error_message) })
+        set_active_conversation(request_conv_id_main) # Set active for the future
+        # Translated warning and error message
+        if (!request_conv_id_main %in% get_all_conversation_ids()) { warning(paste("FUTURE (Main -", request_conv_id_main, ") Conversation does not exist before API call.")); stop("Conversation was deleted.") }
+        # get_assistant_response will use PERSISTENT attachments from get_conversation_attachments(request_conv_id_main)
+        # Assumes get_assistant_response is available/translated
+        response_text <- tryCatch({ get_assistant_response() }, error = function(e) { error_message <- paste("API Error in future:", e$message); warning(paste("FUTURE (Main -", request_conv_id_main, ")", error_message)); return(error_message) })
         list(response = response_text, conv_id = request_conv_id_main)
       }) %...>% (function(result) {
-        # Callback po odpowiedzi API (bez zmian logiki przewijania i aktualizacji historii)
+        # Callback after API response (scrolling and history update logic unchanged)
         response_conv_id <- result$conv_id
         assistant_response_content <- result$response
-        if(!response_conv_id %in% open_tab_ids_rv()) { message(paste("FUTURE-CALLBACK (Main -", response_conv_id, ") Karta zamknięta.")); removeNotification(paste0("api_call_indicator_", response_conv_id)); processing_state[[response_conv_id]] <- FALSE; return() }
+        # Translated message
+        if(!response_conv_id %in% open_tab_ids_rv()) { message(paste("FUTURE-CALLBACK (Main -", response_conv_id, ") Tab closed.")); removeNotification(paste0("api_call_indicator_", response_conv_id)); processing_state[[response_conv_id]] <- FALSE; return() }
         processing_state[[response_conv_id]] <- FALSE
-        update_send_button_state(response_conv_id) # Włącz przycisk Wyślij
-        if (!response_conv_id %in% get_all_conversation_ids()) { message(paste("FUTURE-CALLBACK (Main -", response_conv_id, ") Konwersacja nie istnieje po API call.")); removeNotification(paste0("api_call_indicator_", response_conv_id)); return() }
+        update_send_button_state(response_conv_id) # Enable Send button
+        # Translated message
+        if (!response_conv_id %in% get_all_conversation_ids()) { message(paste("FUTURE-CALLBACK (Main -", response_conv_id, ") Conversation does not exist after API call.")); removeNotification(paste0("api_call_indicator_", response_conv_id)); return() }
         ns_resp <- NS(response_conv_id)
         updated_history <- get_conversation_history(response_conv_id)
         if(is.null(updated_history)) updated_history <- list()
@@ -360,20 +383,23 @@ run_llm_chat_app <- function() {
         }
         removeNotification(paste0("api_call_indicator_", response_conv_id))
         conv_title_for_notif <- get_conversation_title(response_conv_id) %||% response_conv_id
-        if (is.character(assistant_response_content) && grepl("^Błąd(:| API:)", assistant_response_content, ignore.case = TRUE)) { showNotification(paste("Błąd przetwarzania dla:", conv_title_for_notif), type = "error", duration = 5) } else { showNotification(paste("Otrzymano odpowiedź dla:", conv_title_for_notif), type = "message", duration = 3) }
+        # Translated notifications (using English "Error")
+        if (is.character(assistant_response_content) && grepl("^Error(:| API:)", assistant_response_content, ignore.case = TRUE)) { showNotification(paste("Processing error for:", conv_title_for_notif), type = "error", duration = 5) } else { showNotification(paste("Received response for:", conv_title_for_notif), type = "message", duration = 3) }
       }) %...!% (function(error) {
-        # Callback błędu future (bez zmian)
+        # Future error callback (logic unchanged)
         error_conv_id_main <- request_conv_id_main
-        message(paste("FUTURE-ERROR (Main -", error_conv_id_main, ") Błąd future: ", error$message))
-        if(!error_conv_id_main %in% open_tab_ids_rv()) { message(paste("FUTURE-ERROR (Main -", error_conv_id_main, ") Karta zamknięta.")); removeNotification(paste0("api_call_indicator_", error_conv_id_main)); processing_state[[error_conv_id_main]] <- FALSE; return() }
+        # Translated message and notification
+        message(paste("FUTURE-ERROR (Main -", error_conv_id_main, ") Future error: ", error$message))
+        if(!error_conv_id_main %in% open_tab_ids_rv()) { message(paste("FUTURE-ERROR (Main -", error_conv_id_main, ") Tab closed.")); removeNotification(paste0("api_call_indicator_", error_conv_id_main)); processing_state[[error_conv_id_main]] <- FALSE; return() }
         processing_state[[error_conv_id_main]] <- FALSE
-        update_send_button_state(error_conv_id_main) # Włącz przycisk
+        update_send_button_state(error_conv_id_main) # Enable button
         removeNotification(paste0("api_call_indicator_", error_conv_id_main))
-        showNotification(paste("Błąd asynchroniczny:", error$message), type="error", duration=10)
+        showNotification(paste("Asynchronous error:", error$message), type="error", duration=10)
         tryCatch({
           set_active_conversation(error_conv_id_main)
           if (error_conv_id_main %in% get_all_conversation_ids()) {
-            add_message_to_active_history(role = "system", content = paste("Błąd wykonania Future:", error$message))
+            # Translated system message content
+            add_message_to_active_history(role = "system", content = paste("Future execution error:", error$message))
             ns_err <- NS(error_conv_id_main)
             err_history <- get_conversation_history(error_conv_id_main)
             if(is.null(err_history)) err_history <- list()
@@ -390,175 +416,265 @@ run_llm_chat_app <- function() {
               shinyjs::runjs(js_code)
             }
           }
-        }, error = function(e2){ warning(paste("FUTURE-ERROR (Main -", error_conv_id_main, ") Nie udało się zapisać błędu future:", e2$message)) })
+        }, error = function(e2){ warning(paste("FUTURE-ERROR (Main -", error_conv_id_main, ") Failed to save future error:", e2$message)) }) # Translated warning
       })
 
-      # Przywróć pierwotnie aktywną konwersację (jeśli była inna)
+      # Restore originally active conversation (if different)
       set_active_conversation(original_active_conv_id_before_add)
       NULL
     })
 
 
-    # 3. Dodaj Plik (+) (kliknięcie) (Bez zmian)
+    # 3. Add File (+) (click) (Logic unchanged, messages/notifications translated)
     observeEvent(input$dynamic_add_file_click, {
       req(input$dynamic_add_file_click)
       conv_id <- input$dynamic_add_file_click$convId
       req(conv_id %in% open_tab_ids_rv())
       current_model <- get_conversation_model(conv_id)
       if (is.null(current_model)){ return() }
-      if (current_model %in% simplified_models_list) { showNotification(paste("Model", current_model, "nie obsługuje załączników."), type="warning", duration=4); return() }
-      if (isTRUE(processing_state[[conv_id]])) { showNotification("Poczekaj na zakończenie odpowiedzi.", type="warning", duration=4); return() }
-      message(paste("SERVER: Kliknięto Dodaj Plik dla conv_id:", conv_id, "- Ustawiam kontekst."))
+      # Translated notifications
+      if (current_model %in% simplified_models_list) { showNotification(paste("Model", current_model, "does not support attachments."), type="warning", duration=4); return() }
+      if (isTRUE(processing_state[[conv_id]])) { showNotification("Please wait for the current response to complete.", type="warning", duration=4); return() }
+      # Translated message
+      message(paste("SERVER: Clicked Add File for conv_id:", conv_id, "- Setting context."))
       file_upload_context_rv(conv_id)
     })
 
-    # 4. Przetwarzanie Wybranych Plików (ZMIENIONE)
+    # 4. Process Selected Files (CHANGED - Messages, Notifications)
     observeEvent(input$hidden_file_input, {
       conv_id_for_upload <- isolate(file_upload_context_rv())
-      file_upload_context_rv(NULL) # Resetuj kontekst od razu
+      file_upload_context_rv(NULL) # Reset context immediately
       req(conv_id_for_upload, conv_id_for_upload %in% open_tab_ids_rv(), input$hidden_file_input)
 
-      message(paste("SERVER (", conv_id_for_upload, "): Przetwarzam pliki."))
+      # Translated message, warning
+      message(paste("SERVER (", conv_id_for_upload, "): Processing files."))
       current_model <- get_conversation_model(conv_id_for_upload)
       if (is.null(current_model)) return()
-      if (current_model %in% simplified_models_list) { warning("Próba przetworzenia pliku dla modelu uproszczonego."); session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input")); return() }
-      if (isTRUE(processing_state[[conv_id_for_upload]])) { message(paste("SERVER (", conv_id_for_upload, "): Ignoruję dodawanie pliku - przetwarzanie w toku.")); return() }
+      if (current_model %in% simplified_models_list) { warning("Attempting to process file for a simplified model."); session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input")); return() }
+      if (isTRUE(processing_state[[conv_id_for_upload]])) { message(paste("SERVER (", conv_id_for_upload, "): Ignoring file add - processing in progress.")); return() }
 
-      # Nie blokujemy już stanu przetwarzania tutaj, bo to tylko dodawanie do stagingu
+      # We no longer manage processing state here, as it's just staging
       # processing_state[[conv_id_for_upload]] <- TRUE
-      # update_send_button_state(conv_id_for_upload) # Stan przycisku zależy teraz od staged files i tekstu
-      # update_add_file_button_state(conv_id_for_upload) # Ten może pozostać włączony
+      # update_send_button_state(conv_id_for_upload) # Button state now depends on staged files and text
+      # update_add_file_button_state(conv_id_for_upload) # This can likely remain enabled
 
       files_info_from_input <- input$hidden_file_input
       files_added_to_staging_success <- 0
       files_failed <- 0
-      newly_staged_filenames <- character(0) # Lista nazw plików dodanych w tej operacji
+      newly_staged_filenames <- character(0) # List of filenames added in this operation
 
       original_active_conv_before_upload <- get_active_conversation_id()
       tryCatch({
-        set_active_conversation(conv_id_for_upload) # Ustaw aktywną na czas operacji
+        set_active_conversation(conv_id_for_upload) # Set active for the operation
 
         for (i in seq_len(nrow(files_info_from_input))) {
           file_info <- files_info_from_input[i, ]
           file_name <- file_info$name
           file_path <- file_info$datapath
-          message(paste("SERVER (", conv_id_for_upload, "): Odczytuję:", file_name))
+          # Translated message
+          message(paste("SERVER (", conv_id_for_upload, "): Reading:", file_name))
 
+          # Assumes read_file_content is available/translated
           file_content <- tryCatch({ read_file_content(file_path) }, error = function(e_read) {
-            warning(paste("(", conv_id_for_upload, ") Błąd odczytu", file_name, ":", e_read$message))
-            showNotification(paste("Błąd odczytu", file_name), type="error", duration=5)
+            # Translated warning and notification
+            warning(paste("(", conv_id_for_upload, ") Error reading", file_name, ":", e_read$message))
+            showNotification(paste("Error reading", file_name), type="error", duration=5)
             return(NULL)
           })
 
           if (!is.null(file_content)) {
-            # 1. Dodaj do TRWAŁYCH załączników (dla modelu)
+            # 1. Add to PERSISTENT attachments (for the model)
+            # Assumes add_attachment_to_active_conversation is available/translated
             added_persistently <- add_attachment_to_active_conversation(name = file_name, content = file_content)
             if (added_persistently) {
-              # 2. Dodaj nazwę do listy STAGED (dla UI i następnej wiadomości)
+              # 2. Add name to STAGED list (for UI and next message)
               newly_staged_filenames <- c(newly_staged_filenames, file_name)
               files_added_to_staging_success <- files_added_to_staging_success + 1
             } else {
-              # Nie udało się dodać trwale (np. duplikat), więc nie dodajemy do staged
+              # Failed to add persistently (e.g., duplicate), so don't add to staged
               files_failed <- files_failed + 1
-              showNotification(paste("Plik", file_name, "już istnieje lub wystąpił błąd dodawania."), type="warning", duration=4)
+              # Translated notification
+              showNotification(paste("File", file_name, "already exists or an error occurred adding it."), type="warning", duration=4)
             }
           } else {
             files_failed <- files_failed + 1
           }
-        } # Koniec pętli po plikach
+        } # End loop over files
 
-        # Po przetworzeniu wszystkich plików, zaktualizuj staged_attachments_rv i UI
+        # After processing all files, update staged_attachments_rv and UI
         if (length(newly_staged_filenames) > 0) {
           current_staged <- staged_attachments_rv()
           existing_staged <- current_staged[[conv_id_for_upload]] %||% list()
-          # Upewnij się, że nie dodajesz duplikatów do listy staged (choć add_attachment... powinien to obsłużyć)
+          # Ensure no duplicates are added to the staged list (though add_attachment... should handle this)
           combined_staged <- unique(c(existing_staged, newly_staged_filenames))
           current_staged[[conv_id_for_upload]] <- combined_staged
           staged_attachments_rv(current_staged)
 
-          # Zaktualizuj UI listy staged files
+          # Update the staged files list UI
           if (conv_id_for_upload %in% get_all_conversation_ids()) {
             ns_files <- NS(conv_id_for_upload)
             output[[ns_files("staged_files_list_output")]] <- render_staged_attachments_list_ui(combined_staged)
-            update_send_button_state(conv_id_for_upload) # Zaktualizuj stan przycisku Wyślij
+            update_send_button_state(conv_id_for_upload) # Update Send button state
           } else {
-            message(paste("Konwersacja", conv_id_for_upload, "nie istnieje po przetworzeniu plików."))
+            # Translated message
+            message(paste("Conversation", conv_id_for_upload, "does not exist after processing files."))
           }
         }
 
-        # Notyfikacje
+        # Notifications (translated)
         conv_title_for_notif <- get_conversation_title(conv_id_for_upload) %||% conv_id_for_upload
-        if (files_added_to_staging_success > 0) showNotification(paste("Dodano", files_added_to_staging_success, "plik(ów) do przygotowania dla:", conv_title_for_notif), type="message", duration=3)
-        if (files_failed > 0) showNotification(paste("Nie udało się dodać/odczytać", files_failed, "plik(ów)."), type="warning", duration=5)
+        if (files_added_to_staging_success > 0) showNotification(paste("Added", files_added_to_staging_success, "file(s) to staging for:", conv_title_for_notif), type="message", duration=3)
+        if (files_failed > 0) showNotification(paste("Failed to add/read", files_failed, "file(s)."), type="warning", duration=5)
 
       }, error = function(e) {
-        error_msg <- paste("Błąd przetwarzania plików:", e$message)
+        # Translated error message and notification
+        error_msg <- paste("Error processing files:", e$message)
         warning(paste("(", conv_id_for_upload, ")", error_msg))
         showNotification(error_msg, type = "error", duration = 8)
       }, finally = {
-        # Już nie zarządzamy processing_state tutaj
+        # No longer managing processing_state here
         # processing_state[[conv_id_for_upload]] <- FALSE
-        update_send_button_state(conv_id_for_upload) # Upewnij się, że stan przycisku jest aktualny
-        update_add_file_button_state(conv_id_for_upload) # Stan tego przycisku zwykle się nie zmienia
-        set_active_conversation(original_active_conv_before_upload) # Przywróć aktywną konwersację
-        # Zresetuj globalny file input
+        update_send_button_state(conv_id_for_upload) # Ensure button state is current
+        update_add_file_button_state(conv_id_for_upload) # State of this button usually doesn't change
+        set_active_conversation(original_active_conv_before_upload) # Restore active conversation
+        # Reset global file input
         session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input"))
-        message(paste("SERVER (", conv_id_for_upload, "): Zakończono przetwarzanie plików dla stagingu."))
+        # Translated message
+        message(paste("SERVER (", conv_id_for_upload, "): Finished processing files for staging."))
       })
-      NULL # Zwróć NULL z observeEvent
+      NULL # Return NULL from observeEvent
     }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
 
-    # 5. Zamknij Kartę (ZMIENIONE - usuń staged data)
+    # 5. Close Tab (CHANGED - Remove staged data, messages/notifications translated)
     observeEvent(input$close_tab_request, {
       req(input$close_tab_request)
       tab_id_to_close <- input$close_tab_request
-      message(paste("SERVER: Żądanie zamknięcia karty ID:", tab_id_to_close))
+      # Translated message and notification
+      message(paste("SERVER: Request to close tab ID:", tab_id_to_close))
       if(!tab_id_to_close %in% open_tab_ids_rv()){ return() }
       open_tabs <- open_tab_ids_rv()
-      if (length(open_tabs) <= 1) { showNotification("Nie można zamknąć ostatniej karty.", type = "warning", duration = 3); return() }
+      if (length(open_tabs) <= 1) { showNotification("Cannot close the last tab.", type = "warning", duration = 3); return() }
 
-      # Usuń dane z reactive values dla tej karty
+      # Remove data from reactive values for this tab
       processing_state[[tab_id_to_close]] <- NULL
       current_staged <- staged_attachments_rv()
-      current_staged[[tab_id_to_close]] <- NULL # Usuń wpis
+      current_staged[[tab_id_to_close]] <- NULL # Remove entry
       staged_attachments_rv(current_staged)
 
-      # Usuń kartę z UI i listy otwartych
+      # Remove tab from UI and list of open tabs
       open_tab_ids_rv(setdiff(open_tabs, tab_id_to_close))
       removeTab(inputId = "chatTabs", target = tab_id_to_close)
-      # Usuń konwersację z backendu
+      # Delete conversation from backend (assumes delete_conversation is available)
       delete_conversation(tab_id_to_close)
 
-      # Zarządzanie aktywną kartą (bez zmian)
+      # Manage active tab (logic unchanged, message translated)
       current_active_id <- active_conv_id_rv()
       if (!is.null(current_active_id) && current_active_id == tab_id_to_close) {
         active_conv_id_rv(NULL)
-        message("SERVER: Aktywna karta została zamknięta.")
+        message("SERVER: The active tab was closed.")
         remaining_tabs <- open_tab_ids_rv()
         if (length(remaining_tabs) > 0) {
-          # Automatycznie przełącz na pierwszą pozostałą kartę
+          # Automatically switch to the first remaining tab
           # updateTabsetPanel(session, "chatTabs", selected = remaining_tabs[1])
-          # Nie robimy tego, observeEvent(input$chatTabs) powinno sobie poradzić
+          # We don't do this; observeEvent(input$chatTabs) should handle it
         } else {
-          set_active_conversation(NULL) # Brak otwartych kart
+          set_active_conversation(NULL) # No open tabs left
         }
       }
     }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-    # --- Logika Modala "Ustawienia" (Bez zmian) ---
-    observeEvent(input$advanced_settings_btn, { active_id <- active_conv_id_rv(); req(active_id, active_id %in% get_all_conversation_ids()); message(paste("SERVER: Otwieram ustawienia dla:", active_id)); current_conv <- get_conversation_data(active_id); if(is.null(current_conv)){ showNotification("Błąd pobierania danych konwersacji.", type="error"); return() }; current_model <- current_conv$model %||% "gpt-4o"; current_temp <- current_conv$temperature %||% 0.5; current_sys_msg <- current_conv$system_message %||% ""; model_is_locked <- is_conversation_started(active_id); showModal(modalDialog( title = paste("Ustawienia dla:", current_conv$title %||% active_id), create_advanced_settings_modal_ui( available_models = available_openai_models, model_value = current_model, temp_value = current_temp, sys_msg_value = current_sys_msg ), footer = tagList(modalButton("Anuluj"), actionButton("save_advanced_settings", "Zapisz zmiany")), easyClose = TRUE, size = "m" )); observe({ selected_model_in_modal <- input$modal_model; req(selected_model_in_modal); model_selector_id <- "modal_model"; model_lock_msg_id <- "model_locked_message"; temp_input_id <- "modal_temp"; temp_msg_id <- "temp_disabled_message"; sys_msg_input_id <- "modal_system_message"; sys_msg_msg_id <- "sysmsg_disabled_message"; is_simplified <- selected_model_in_modal %in% simplified_models_list; if (model_is_locked) { shinyjs::disable(model_selector_id); shinyjs::show(model_lock_msg_id) } else { shinyjs::enable(model_selector_id); shinyjs::hide(model_lock_msg_id) }; if (is_simplified) { shinyjs::disable(temp_input_id); shinyjs::show(temp_msg_id); shinyjs::disable(sys_msg_input_id); shinyjs::show(sys_msg_msg_id) } else { shinyjs::enable(temp_input_id); shinyjs::hide(temp_msg_id); shinyjs::enable(sys_msg_input_id); shinyjs::hide(sys_msg_msg_id) } }) })
-    observeEvent(input$save_advanced_settings, { active_id <- active_conv_id_rv(); req(active_id, active_id %in% get_all_conversation_ids()); new_model <- isolate(input$modal_model); new_temp <- isolate(input$modal_temp); new_sys_msg <- isolate(input$modal_system_message); model_is_locked <- is_conversation_started(active_id); model_saved <- FALSE; current_model_for_check <- get_conversation_model(active_id); if (!model_is_locked) { if (is.null(new_model) || !new_model %in% available_openai_models) { showNotification("Wybrany model jest nieprawidłowy.", type = "error"); return() }; model_saved <- set_conversation_model(active_id, new_model); if (model_saved) { message(paste("SERVER: Zapisano model dla", active_id, "na:", new_model)); update_add_file_button_state(active_id); current_model_for_check <- new_model } else { showNotification("Nie można zapisać modelu.", type = "warning") } } else { if (!is.null(new_model) && !identical(new_model, current_model_for_check)) { warning("Ignoruję próbę zmiany zablokowanego modelu.") }; model_saved <- TRUE }; if(!model_saved && !model_is_locked) return(); temp_saved = FALSE; sys_msg_saved = FALSE; if (!current_model_for_check %in% simplified_models_list) { if (is.null(new_temp) || !is.numeric(new_temp) || new_temp < 0 || new_temp > 1) { showNotification("Nieprawidłowa wartość temperatury.", type = "error"); return() }; if (is.null(new_sys_msg) || !is.character(new_sys_msg) || length(new_sys_msg) != 1) { showNotification("Nieprawidłowy komunikat systemowy.", type = "error"); return() }; temp_saved <- set_conversation_temperature(active_id, new_temp); sys_msg_saved <- set_conversation_system_message(active_id, new_sys_msg); if(temp_saved && sys_msg_saved) message(paste("SERVER: Zapisano Temp/SysMsg dla", active_id)) else showNotification("Nie udało się zapisać temp/sys_msg.", type="warning") } else { message(paste("SERVER: Model", current_model_for_check, "uproszczony. Ignoruję Temp/SysMsg.")); temp_saved = TRUE; sys_msg_saved = TRUE }; if((model_is_locked || model_saved) && temp_saved && sys_msg_saved) { showNotification("Ustawienia zostały zapisane.", type = "message"); removeModal(); update_send_button_state(active_id); update_add_file_button_state(active_id) } else { if (!model_saved || !temp_saved || !sys_msg_saved) { showNotification("Wystąpił błąd podczas zapisywania ustawień.", type = "error") } } })
+    # --- "Settings" Modal Logic (Messages, Notifications, Modal Title/Buttons translated) ---
+    observeEvent(input$advanced_settings_btn, {
+      active_id <- active_conv_id_rv(); req(active_id, active_id %in% get_all_conversation_ids());
+      # Translated message, notification, modal title
+      message(paste("SERVER: Opening settings for:", active_id));
+      current_conv <- get_conversation_data(active_id); # Assumes get_conversation_data is available
+      if(is.null(current_conv)){ showNotification("Error retrieving conversation data.", type="error"); return() };
+      current_model <- current_conv$model %||% "gpt-4o"; current_temp <- current_conv$temperature %||% 0.5; current_sys_msg <- current_conv$system_message %||% "";
+      model_is_locked <- is_conversation_started(active_id); # Assumes is_conversation_started is available
+      showModal(modalDialog(
+        title = paste("Settings for:", current_conv$title %||% active_id), # Translated title prefix
+        # Assumes create_advanced_settings_modal_ui is translated/available
+        create_advanced_settings_modal_ui(
+          available_models = available_openai_models,
+          model_value = current_model,
+          temp_value = current_temp,
+          sys_msg_value = current_sys_msg
+        ),
+        # Translated footer buttons
+        footer = tagList(modalButton("Cancel"), actionButton("save_advanced_settings", "Save Changes")),
+        easyClose = TRUE, size = "m"
+      ));
+      # Observer within modal (logic unchanged, IDs assumed correct)
+      observe({
+        selected_model_in_modal <- input$modal_model; req(selected_model_in_modal);
+        model_selector_id <- "modal_model"; model_lock_msg_id <- "model_locked_message";
+        temp_input_id <- "modal_temp"; temp_msg_id <- "temp_disabled_message";
+        sys_msg_input_id <- "modal_system_message"; sys_msg_msg_id <- "sysmsg_disabled_message";
+        is_simplified <- selected_model_in_modal %in% simplified_models_list;
+        if (model_is_locked) { shinyjs::disable(model_selector_id); shinyjs::show(model_lock_msg_id) } else { shinyjs::enable(model_selector_id); shinyjs::hide(model_lock_msg_id) };
+        if (is_simplified) { shinyjs::disable(temp_input_id); shinyjs::show(temp_msg_id); shinyjs::disable(sys_msg_input_id); shinyjs::show(sys_msg_msg_id) } else { shinyjs::enable(temp_input_id); shinyjs::hide(temp_msg_id); shinyjs::enable(sys_msg_input_id); shinyjs::hide(sys_msg_msg_id) }
+      })
+    })
+    observeEvent(input$save_advanced_settings, {
+      active_id <- active_conv_id_rv(); req(active_id, active_id %in% get_all_conversation_ids());
+      new_model <- isolate(input$modal_model); new_temp <- isolate(input$modal_temp); new_sys_msg <- isolate(input$modal_system_message);
+      model_is_locked <- is_conversation_started(active_id); model_saved <- FALSE;
+      current_model_for_check <- get_conversation_model(active_id);
+      if (!model_is_locked) {
+        # Translated notification
+        if (is.null(new_model) || !new_model %in% available_openai_models) { showNotification("Selected model is invalid.", type = "error"); return() };
+        model_saved <- set_conversation_model(active_id, new_model); # Assumes set_conversation_model is available/translated
+        if (model_saved) {
+          # Translated message
+          message(paste("SERVER: Saved model for", active_id, "to:", new_model));
+          update_add_file_button_state(active_id); current_model_for_check <- new_model
+        } else {
+          # Translated notification
+          showNotification("Could not save model.", type = "warning")
+        }
+      } else {
+        # Translated warning
+        if (!is.null(new_model) && !identical(new_model, current_model_for_check)) { warning("Ignoring attempt to change locked model.") };
+        model_saved <- TRUE
+      };
+      if(!model_saved && !model_is_locked) return();
+      temp_saved = FALSE; sys_msg_saved = FALSE;
+      if (!current_model_for_check %in% simplified_models_list) {
+        # Translated notifications
+        if (is.null(new_temp) || !is.numeric(new_temp) || new_temp < 0 || new_temp > 1) { showNotification("Invalid temperature value.", type = "error"); return() };
+        if (is.null(new_sys_msg) || !is.character(new_sys_msg) || length(new_sys_msg) != 1) { showNotification("Invalid system message.", type = "error"); return() };
+        # Assumes set_conversation_temperature and set_conversation_system_message are available/translated
+        temp_saved <- set_conversation_temperature(active_id, new_temp);
+        sys_msg_saved <- set_conversation_system_message(active_id, new_sys_msg);
+        # Translated message and notification
+        if(temp_saved && sys_msg_saved) message(paste("SERVER: Saved Temp/SysMsg for", active_id)) else showNotification("Failed to save temp/sys_msg.", type="warning")
+      } else {
+        # Translated message
+        message(paste("SERVER: Model", current_model_for_check, "is simplified. Ignoring Temp/SysMsg."));
+        temp_saved = TRUE; sys_msg_saved = TRUE
+      };
+      # Translated notifications
+      if((model_is_locked || model_saved) && temp_saved && sys_msg_saved) {
+        showNotification("Settings have been saved.", type = "message");
+        removeModal(); update_send_button_state(active_id); update_add_file_button_state(active_id)
+      } else {
+        if (!model_saved || !temp_saved || !sys_msg_saved) {
+          showNotification("An error occurred while saving settings.", type = "error")
+        }
+      }
+    })
 
-  } # Koniec definicji server
+  } # End of server definition
 
-  # --- Uruchomienie Aplikacji ---
+  # --- Run the Application ---
   shiny::runGadget(ui, server, viewer = shiny::paneViewer(minHeight = 600))
 
 }
-# --- Komentarze dotyczące użycia (BEZ ZMIAN) ---
-# 1. Upewnij się, że wszystkie zależności są w DESCRIPTION (shiny, shinyjs, future, promises, itd.)
-# 2. Uruchom `devtools::document()`
-# 3. Zbuduj/załaduj pakiet: `devtools::install()` lub `devtools::load_all()`
-# 4. Ustaw klucz API OpenAI w .Renviron (jeśli potrzebne).
-# 5. Uruchom aplikację: `NazwaTwojegoPakietu::run_llm_chat_app()`
+# --- Usage Comments (TRANSLATED) ---
+# 1. Ensure all dependencies are in DESCRIPTION (shiny, shinyjs, future, promises, etc.)
+# 2. Run `devtools::document()`
+# 3. Build/load the package: `devtools::install()` or `devtools::load_all()`
+# 4. Set the OpenAI API key in .Renviron (if needed).
+# 5. Run the application: `YourPackageName::run_llm_chat_app()`

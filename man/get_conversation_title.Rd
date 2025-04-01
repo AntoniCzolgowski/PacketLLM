@@ -2,16 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_title}
 \alias{get_conversation_title}
-\title{Pobiera tytuł konwersacji o podanym ID}
+\title{Gets the title of the conversation with the given ID}
 \usage{
 get_conversation_title(id)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 }
 \value{
-Tytuł (string) lub NULL, jeśli konwersacja nie istnieje lub nie ma tytułu.
+Title (string) or NULL if the conversation doesn't exist or has no title.
 }
 \description{
-Pobiera tytuł konwersacji o podanym ID
+Gets the title of the conversation with the given ID
 }

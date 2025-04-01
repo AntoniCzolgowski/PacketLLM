@@ -2,16 +2,16 @@
 % Please edit documentation in R/openai_api.R
 \name{check_api_key}
 \alias{check_api_key}
-\title{Sprawdzenie klucza API}
+\title{Check API Key}
 \usage{
 check_api_key()
 }
 \value{
-Zwraca TRUE, jeśli klucz API jest ustawiony; w przeciwnym razie przerywa działanie.
+Returns TRUE if the API key is set; otherwise, stops execution.
 }
 \description{
-Ta funkcja sprawdza, czy w zmiennych środowiskowych (np. w pliku .Renviron)
-znajduje się klucz API przypisany do zmiennej \code{OPENAI_API_KEY}.
-Jeśli klucz nie jest ustawiony, funkcja zgłosi błąd i przerwie działanie.
-Jeśli klucz jest ustawiony, zwraca TRUE.
+This function checks if the API key assigned to the \code{OPENAI_API_KEY} variable
+exists in the environment variables (e.g., in the .Renviron file).
+If the key is not set, the function will raise an error and stop execution.
+If the key is set, it returns TRUE.
 }

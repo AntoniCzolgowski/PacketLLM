@@ -2,13 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{initialize_history_manager}
 \alias{initialize_history_manager}
-\title{Inicjalizuje menedżera historii}
+\title{Initializes the history manager}
 \usage{
 initialize_history_manager()
 }
 \value{
-ID pierwszej utworzonej konwersacji.
+ID of the first created conversation.
 }
 \description{
-Czyści stan i tworzy pierwszą, pustą konwersację.
+Clears the state and creates the first, empty conversation.
 }

@@ -1,99 +1,99 @@
 # openai_api.R
 
-#' Lista dostępnych modeli OpenAI do wyboru w UI
+#' List of available OpenAI models for selection in the UI
 #' @export
 available_openai_models <- c("gpt-4o", "gpt-4o-mini", "o1", "o3-mini")
 
-#' Modele, które nie obsługują dodatkowych parametrów (np. temperatury)
+#' Models that do not support additional parameters (e.g., temperature)
 #' @noRd
 simplified_models_list <- c("o1", "o3-mini")
 
-#' Sprawdzenie klucza API
+#' Check API Key
 #'
-#' Ta funkcja sprawdza, czy w zmiennych środowiskowych (np. w pliku .Renviron)
-#' znajduje się klucz API przypisany do zmiennej `OPENAI_API_KEY`.
-#' Jeśli klucz nie jest ustawiony, funkcja zgłosi błąd i przerwie działanie.
-#' Jeśli klucz jest ustawiony, zwraca TRUE.
+#' This function checks if the API key assigned to the `OPENAI_API_KEY` variable
+#' exists in the environment variables (e.g., in the .Renviron file).
+#' If the key is not set, the function will raise an error and stop execution.
+#' If the key is set, it returns TRUE.
 #'
-#' @return Zwraca TRUE, jeśli klucz API jest ustawiony; w przeciwnym razie przerywa działanie.
+#' @return Returns TRUE if the API key is set; otherwise, stops execution.
 #' @export
 check_api_key <- function() {
   key <- Sys.getenv("OPENAI_API_KEY")
   if (!nzchar(key)) {
-    stop("Brak klucza API w .Renviron. Ustaw zmienną OPENAI_API_KEY i zrestartuj R.", call. = FALSE)
+    stop("API key missing in .Renviron. Set the OPENAI_API_KEY variable and restart R.", call. = FALSE)
   }
   invisible(TRUE)
 }
 
-#' Wywołanie API OpenAI
+#' Call OpenAI API
 #'
-#' Funkcja wysyła historię konwersacji do API OpenAI i zwraca odpowiedź modelu.
-#' Dla modeli z `simplified_models_list` NIE wysyła parametru `temperature`.
+#' Function sends the conversation history to the OpenAI API and returns the model's response.
+#' For models in `simplified_models_list`, it does NOT send the `temperature` parameter.
 #'
-#' @param messages Lista wiadomości (każda wiadomość to lista z polami 'role' i 'content').
-#' @param model Model OpenAI do użycia.
-#' @param temperature Parametr temperatury (używany tylko dla modeli, które go obsługują).
+#' @param messages List of messages (each message is a list with 'role' and 'content' fields).
+#' @param model OpenAI model to use.
+#' @param temperature Temperature parameter (used only for models that support it).
 #'
-#' @return Łańcuch znaków zawierający odpowiedź modelu.
+#' @return Character string containing the model's response.
 #' @export
 call_openai_chat <- function(messages, model, temperature = 0.5) {
   check_api_key()
 
   if (!requireNamespace("httr", quietly = TRUE)) {
-    stop("Pakiet 'httr' jest wymagany do wywoływania API. Zainstaluj go.", call. = FALSE)
+    stop("The 'httr' package is required for API calls. Please install it.", call. = FALSE)
   }
 
   url <- "https://api.openai.com/v1/chat/completions"
 
-  # ZMIANA: Tworzenie podstawowego payloadu
+  # CHANGE: Create the basic payload
   payload <- list(
     model = model,
     messages = messages
-    # Na razie bez temperatury
+    # Without temperature for now
   )
 
-  # ZMIANA: Warunkowe dodanie temperatury tylko dla obsługiwanych modeli
+  # CHANGE: Conditionally add temperature only for supported models
   if (!model %in% simplified_models_list) {
     payload$temperature <- temperature
-    message(paste("API Call: Dołączam parametr temperature =", temperature, "dla modelu", model))
+    message(paste("API Call: Including temperature parameter =", temperature, "for model", model))
   } else {
-    message(paste("API Call: Pomijam parametr temperature dla modelu", model))
+    message(paste("API Call: Omitting temperature parameter for model", model))
   }
 
-  # Wywołanie API z przygotowanym payloadem
+  # API call with the prepared payload
   response <- httr::POST(
     url,
     httr::add_headers(
       "Content-Type" = "application/json",
       "Authorization" = paste("Bearer", Sys.getenv("OPENAI_API_KEY"))
     ),
-    body = payload, # Użyj przygotowanego payloadu
+    body = payload, # Use the prepared payload
     encode = "json",
     httr::timeout(1200)
   )
 
-  # Obsługa błędów (bez zmian)
+  # Error handling (no changes)
   if (httr::http_error(response)) {
     error_content <- httr::content(response, "text", encoding = "UTF-8")
-    stop("Błąd podczas wywoływania API: ", httr::http_status(response)$message, "\nTreść błędu: ", error_content, call. = FALSE)
+    stop("Error during API call: ", httr::http_status(response)$message, "\nError content: ", error_content, call. = FALSE)
   }
 
   content_response <- httr::content(response, "parsed")
 
   if (!is.null(content_response$error)) {
-    stop("Błąd API: ", content_response$error$message, call. = FALSE)
+    stop("API Error: ", content_response$error$message, call. = FALSE)
   }
 
   if (is.null(content_response$choices) || length(content_response$choices) == 0 ||
       is.null(content_response$choices[[1]]$message) || is.null(content_response$choices[[1]]$message$content)) {
     print(content_response)
-    stop("Nieoczekiwana struktura odpowiedzi z API OpenAI.", call. = FALSE)
+    stop("Unexpected response structure from OpenAI API.", call. = FALSE)
   }
 
   return(content_response$choices[[1]]$message$content)
 }
 
-# Helper %||% (bez zmian)
+# Helper %||% (no changes)
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }

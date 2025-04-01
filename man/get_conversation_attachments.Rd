@@ -2,16 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_attachments}
 \alias{get_conversation_attachments}
-\title{Pobiera listę załączników dla konwersacji o podanym ID}
+\title{Gets the list of attachments for the conversation with the given ID}
 \usage{
 get_conversation_attachments(id)
 }
 \arguments{
-\item{id}{ID konwersacji.}
+\item{id}{Conversation ID.}
 }
 \value{
-Lista załączników lub NULL, jeśli konwersacja nie istnieje.
+List of attachments or NULL if conversation doesn't exist.
 }
 \description{
-Pobiera listę załączników dla konwersacji o podanym ID
+Gets the list of attachments for the conversation with the given ID
 }
