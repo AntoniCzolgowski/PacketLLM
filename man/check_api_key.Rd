@@ -13,5 +13,5 @@ Zwraca TRUE, jeśli klucz API jest ustawiony; w przeciwnym razie przerywa dział
 Ta funkcja sprawdza, czy w zmiennych środowiskowych (np. w pliku .Renviron)
 znajduje się klucz API przypisany do zmiennej \code{OPENAI_API_KEY}.
 Jeśli klucz nie jest ustawiony, funkcja zgłosi błąd i przerwie działanie.
-Jeśli klucz jest ustawiony, wyświetli komunikat potwierdzający i zwróci TRUE.
+Jeśli klucz jest ustawiony, zwraca TRUE.
 }

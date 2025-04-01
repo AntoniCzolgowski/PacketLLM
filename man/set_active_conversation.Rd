@@ -2,16 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{set_active_conversation}
 \alias{set_active_conversation}
-\title{Ustawianie aktywnej konwersacji}
+\title{Ustawia aktywną konwersację}
 \usage{
 set_active_conversation(id)
 }
 \arguments{
-\item{id}{ID konwersacji do aktywacji.}
+\item{id}{ID konwersacji do aktywacji lub NULL, aby zdezaktywować.}
 }
 \value{
 Invisible NULL.
 }
 \description{
-Ustawianie aktywnej konwersacji
+Ustawia aktywną konwersację
 }

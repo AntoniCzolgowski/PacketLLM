@@ -2,7 +2,7 @@
 % Please edit documentation in R/history_menager.R
 \name{delete_conversation}
 \alias{delete_conversation}
-\title{Usuwanie konwersacji}
+\title{Usuwa konwersację o podanym ID}
 \usage{
 delete_conversation(id)
 }
@@ -10,8 +10,8 @@ delete_conversation(id)
 \item{id}{ID konwersacji do usunięcia.}
 }
 \value{
-TRUE jeśli usunięto, FALSE jeśli ID nie istniało.
+TRUE jeśli usunięto, FALSE jeśli nie istniała.
 }
 \description{
-Usuwa konwersację o podanym ID.
+Usuwa konwersację o podanym ID
 }

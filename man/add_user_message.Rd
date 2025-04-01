@@ -13,5 +13,5 @@ add_user_message(text)
 Invisible NULL
 }
 \description{
-Dodanie wiadomości użytkownika do aktywnej konwersacji
+Wywołuje add_message_to_active_history, która blokuje model po pierwszej wiadomości.
 }

@@ -4,15 +4,13 @@
 \alias{get_assistant_response}
 \title{Pobranie odpowiedzi asystenta dla aktywnej konwersacji}
 \usage{
-get_assistant_response(model = "gpt-4o")
-}
-\arguments{
-\item{model}{Model OpenAI do użycia (domyślnie "gpt-4o").}
+get_assistant_response()
 }
 \value{
 Tekst odpowiedzi asystenta lub komunikat o błędzie.
 }
 \description{
-Wysyła historię, załączniki ORAZ używa specyficznej dla konwersacji
-temperatury i komunikatu systemowego.
+Wysyła historię do API. Dla modeli \code{o1} i \code{o3-mini} wysyła tylko role
+'user' i 'assistant', ignoruje temperaturę, komunikat systemowy i załączniki.
+Dla pozostałych modeli używa pełnych ustawień konwersacji.
 }

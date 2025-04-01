@@ -12,8 +12,13 @@ add_message_to_active_history(role, content)
 \item{content}{Treść wiadomości.}
 }
 \value{
-Nowy tytuł konwersacji (string) jeśli został zaktualizowany, w przeciwnym razie NULL.
+Lista z informacją o wyniku:
+- \code{list(type = "title_set", new_title = "...")} jeśli ustawiono nowy tytuł.
+- \code{list(type = "assistant_locked_model")} jeśli model został zablokowany.
+- \code{list(type = "message_added")} w pozostałych przypadkach dodania wiadomości.
+- \code{list(type = "error", message = "...")} w przypadku błędu.
 }
 \description{
-Aktualizuje tytuł, jeśli to pierwsza wiadomość użytkownika.
+Aktualizuje tytuł konwersacji na podstawie treści, jeśli to pierwsza wiadomość użytkownika.
+Ustawia flagę \code{model_locked} na TRUE przy pierwszej wiadomości \strong{asystenta}.
 }

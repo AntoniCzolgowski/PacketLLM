@@ -2,13 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{initialize_history_manager}
 \alias{initialize_history_manager}
-\title{Inicjalizacja menedżera historii}
+\title{Inicjalizuje menedżera historii}
 \usage{
 initialize_history_manager()
 }
 \value{
-ID nowo utworzonej, pierwszej konwersacji.
+ID pierwszej utworzonej konwersacji.
 }
 \description{
-Tworzy pierwszą konwersację. Wywoływana na starcie serwera gadżetu.
+Czyści stan i tworzy pierwszą, pustą konwersację.
 }

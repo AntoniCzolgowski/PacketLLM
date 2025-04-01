@@ -2,10 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{reset_history_manager}
 \alias{reset_history_manager}
-\title{Resetowanie menedżera historii}
+\title{Resetuje cały stan menedżera historii}
 \usage{
 reset_history_manager()
 }
+\value{
+Invisible NULL.
+}
 \description{
-Resetowanie menedżera historii
+Resetuje cały stan menedżera historii
 }

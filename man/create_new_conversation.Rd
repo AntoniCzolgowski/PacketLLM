@@ -2,7 +2,7 @@
 % Please edit documentation in R/history_menager.R
 \name{create_new_conversation}
 \alias{create_new_conversation}
-\title{Tworzenie nowej konwersacji}
+\title{Tworzy nową konwersację}
 \usage{
 create_new_conversation(
   activate = FALSE,
@@ -11,15 +11,15 @@ create_new_conversation(
 )
 }
 \arguments{
-\item{activate}{Czy ustawić nową konwersację jako aktywną? (Domyślnie FALSE)}
+\item{activate}{Czy ustawić nową konwersację jako aktywną (domyślnie FALSE).}
 
-\item{add_initial_settings}{Czy dodać domyślny komunikat systemowy i temperaturę? (Domyślnie TRUE) # Zmieniono nazwę flagi}
+\item{add_initial_settings}{Czy dodać domyślny komunikat systemowy do historii (domyślnie TRUE).}
 
-\item{title}{Początkowy tytuł konwersacji (Domyślnie "Nowa rozmowa \link{czas}")}
+\item{title}{Początkowy tytuł konwersacji (domyślnie generowany na podstawie czasu).}
 }
 \value{
 ID nowo utworzonej konwersacji.
 }
 \description{
-Tworzy nowy obiekt konwersacji z domyślnymi ustawieniami zaawansowanymi.
+Dodaje nową konwersację do środowiska \code{.history_env}.
 }

@@ -2,13 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_active_conversation_id}
 \alias{get_active_conversation_id}
-\title{Pobieranie ID aktywnej konwersacji}
+\title{Pobiera ID aktywnej konwersacji}
 \usage{
 get_active_conversation_id()
 }
 \value{
-ID aktywnej konwersacji lub NULL.
+ID aktywnej konwersacji (string) lub NULL.
 }
 \description{
-Pobieranie ID aktywnej konwersacji
+Pobiera ID aktywnej konwersacji
 }

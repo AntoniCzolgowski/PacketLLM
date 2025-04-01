@@ -2,13 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_active_chat_history}
 \alias{get_active_chat_history}
-\title{Pobieranie historii czatu dla aktywnej konwersacji}
+\title{Pobiera historię czatu dla aktywnej konwersacji}
 \usage{
 get_active_chat_history()
 }
 \value{
-Lista wiadomości ({role, content}) dla aktywnej konwersacji lub pusta lista.
+Lista wiadomości lub pusta lista.
 }
 \description{
-Pobieranie historii czatu dla aktywnej konwersacji
+Pobiera historię czatu dla aktywnej konwersacji
 }

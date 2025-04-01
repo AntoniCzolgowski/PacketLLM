@@ -4,18 +4,19 @@
 \alias{call_openai_chat}
 \title{Wywołanie API OpenAI}
 \usage{
-call_openai_chat(messages, model = "gpt-4o", temperature = 0.5)
+call_openai_chat(messages, model, temperature = 0.5)
 }
 \arguments{
 \item{messages}{Lista wiadomości (każda wiadomość to lista z polami 'role' i 'content').}
 
-\item{model}{Model OpenAI do użycia (np. "gpt-4o").}
+\item{model}{Model OpenAI do użycia.}
 
-\item{temperature}{Parametr temperatury (np. 0.5).}
+\item{temperature}{Parametr temperatury (używany tylko dla modeli, które go obsługują).}
 }
 \value{
 Łańcuch znaków zawierający odpowiedź modelu.
 }
 \description{
 Funkcja wysyła historię konwersacji do API OpenAI i zwraca odpowiedź modelu.
+Dla modeli z \code{simplified_models_list} NIE wysyła parametru \code{temperature}.
 }

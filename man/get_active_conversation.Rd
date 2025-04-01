@@ -2,13 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_active_conversation}
 \alias{get_active_conversation}
-\title{Pobieranie obiektu aktywnej konwersacji}
+\title{Pobiera pełny obiekt aktywnej konwersacji}
 \usage{
 get_active_conversation()
 }
 \value{
-Pełny obiekt (lista) aktywnej konwersacji lub NULL.
+Lista reprezentująca konwersację lub NULL.
 }
 \description{
-Pobieranie obiektu aktywnej konwersacji
+Pobiera pełny obiekt aktywnej konwersacji
 }

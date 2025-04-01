@@ -2,13 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_active_conversation_attachments}
 \alias{get_active_conversation_attachments}
-\title{Pobieranie załączników dla aktywnej konwersacji}
+\title{Pobiera listę załączników dla aktywnej konwersacji}
 \usage{
 get_active_conversation_attachments()
 }
 \value{
-Lista załączników.
+Lista załączników lub pusta lista.
 }
 \description{
-Pobieranie załączników dla aktywnej konwersacji
+Pobiera listę załączników dla aktywnej konwersacji
 }
