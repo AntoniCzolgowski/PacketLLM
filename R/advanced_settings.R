@@ -28,39 +28,39 @@ create_advanced_settings_modal_ui <- function(available_models,
     # Container for model selector and lock message
     tags$div(id = "model_selector_container",
              selectInput(model_input_id,
-                         # Translated label
+                         # label
                          label = "LLM Model (for this conversation):",
                          choices = available_models,
                          selected = model_value,
                          width = "100%"),
              tags$small(id = "model_locked_message", class = "text-muted", style = "display: none;",
-                        # Translated message
+                        # message
                         "Changing the model is locked after the conversation starts.") # Hidden by default
     ),
     # Container for temperature and message
     tags$div(id = "temperature_container",
              sliderInput(temp_input_id,
-                         # Translated label
+                         # label
                          label = "Temperature (response creativity):",
-                         min = 0, max = 1, value = temp_value, step = 0.1),
+                         min = 0, max = 1, value = temp_value, step = 0.01),
              tags$small(id = "temp_disabled_message", class = "text-muted", style = "display: none;",
-                        # Translated message
+                        # message
                         "Temperature is not available for the selected models (o1, o3-mini).") # Hidden by default
     ),
 
     # Container for system message and message
     tags$div(id = "system_message_container",
              textAreaInput(msg_input_id,
-                           # Translated label
+                           # label
                            label = "System Message (instructions for the model in this conversation):",
                            value = sys_msg_value,
                            rows = 5,
                            resize = "vertical",
                            width = "100%",
-                           # Translated placeholder
+                           # placeholder
                            placeholder = "E.g., Respond concisely. Be formal. Act like a pirate."),
              tags$small(id = "sysmsg_disabled_message", class = "text-muted", style = "display: none;",
-                        # Translated message
+                        # message
                         "System message is not available for the selected models (o1, o3-mini).") # Hidden by default
     )
   )

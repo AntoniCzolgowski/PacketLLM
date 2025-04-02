@@ -14,7 +14,7 @@ create_tab_content_ui <- function(conv_id) {
   ns <- NS(conv_id) # Create namespace
 
   tagList(
-    # Chat history container (no changes)
+    # Chat history container
     tags$div(
       class = "chat-history-container-class",
       uiOutput(ns("chat_history_output")) # Output rendered by render_chat_history_ui
@@ -24,7 +24,7 @@ create_tab_content_ui <- function(conv_id) {
     tags$div(
       class = "input-action-row",
 
-      # 1. Add File button (+) (no text change needed)
+      # 1. Add File button (+)
       tags$button(
         id = ns("add_file_btn"),
         type = "button",
@@ -33,29 +33,29 @@ create_tab_content_ui <- function(conv_id) {
         "+"
       ),
 
-      # 2. Container for attachment list (CHANGED uiOutput ID)
+      # 2. Container for attachment list (uiOutput ID)
       tags$div(
         id = ns("staged-attachments-list-container"), # Container ID can remain
         class = "attachments-container",
-        # Changed UI output ID to match the server
+        # UI output ID to match the server
         uiOutput(ns("staged_files_list_output")) # Output rendered by render_staged_attachments_list_ui
       ),
 
-      # 3. Message input field (placeholder translated)
+      # 3. Message input field (placeholder)
       textAreaInput(
         ns("user_message_input"),
         label = NULL,
-        placeholder = "Enter message...", # Translated placeholder
+        placeholder = "Enter message...", # placeholder
         width = "100%"
       ),
 
-      # 4. Send button (text translated)
+      # 4. Send button (text)
       tags$button(
         id = ns("send_query_btn"),
         type = "button",
         class = "btn btn-primary send-btn-class",
         `data-conv-id` = conv_id,
-        "Send" # Translated button text
+        "Send" # button text
       )
     ) # End tags$div.input-action-row
   ) # End tagList

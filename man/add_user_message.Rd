@@ -2,7 +2,8 @@
 % Please edit documentation in R/chat_logic.R
 \name{add_user_message}
 \alias{add_user_message}
-\title{Add user message to the active conversation}
+\title{Add user message to the active conversation
+Calls add_message_to_active_history, which locks the model after the first message.}
 \usage{
 add_user_message(text)
 }
@@ -13,5 +14,6 @@ add_user_message(text)
 Invisible NULL
 }
 \description{
+Add user message to the active conversation
 Calls add_message_to_active_history, which locks the model after the first message.
 }

@@ -52,7 +52,7 @@ create_new_conversation <- function(activate = FALSE, add_initial_settings = TRU
   } else {
     "gpt-4o" # Fallback
   }
-  # Default system message translated
+  # Default system message
   default_system_message <- "You are a helpful assistant. Respond clearly and precisely, maintaining code formatting when required."
   default_temperature <- 0.5
 
@@ -162,7 +162,7 @@ add_message_to_active_history <- function(role, content) {
 
   if (is_first_user_message_ever && nzchar(trimws(content))) {
 
-    # --- MODIFIED TITLE LOGIC START ---
+    # ---TITLE LOGIC START ---
     title_content_base <- content # Start with the full content
     attachment_marker <- "\n\n<strong>Attached:</strong>"
     attachment_marker_start <- "<strong>Attached:</strong>"
@@ -186,7 +186,7 @@ add_message_to_active_history <- function(role, content) {
     # Use the processed content for title generation
     words <- strsplit(trimws(title_content_processed), "\\s+")[[1]]
     words <- words[nzchar(words)] # Remove empty strings resulting from multiple spaces
-    # --- MODIFIED TITLE LOGIC END ---
+    # --- TITLE LOGIC END ---
 
     # Existing truncation logic (applied to processed content)
     max_words <- 5
@@ -360,7 +360,7 @@ set_conversation_model <- function(id, model_name) {
 }
 
 
-# --- NEW FUNCTIONS ---
+
 
 #' Sets the temperature for the conversation with the given ID
 #' @param id Conversation ID.
@@ -429,7 +429,6 @@ get_conversation_data <- function(id) {
   return(.history_env$conversations[[id]])
 }
 
-# --- END OF NEW FUNCTIONS ---
 
 
 #' Resets the entire state of the history manager
@@ -485,7 +484,7 @@ get_active_conversation_attachments <- function() {
   return(active_conv$attachments %||% list())
 }
 
-# Helper %||% (can be defined globally)
+# Helper %||%
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }

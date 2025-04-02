@@ -1,6 +1,5 @@
 # gadget_rendering_helpers.R
 
-# Assume `%||%` is available globally or defined elsewhere.
 
 #' Renders the UI for the chat history
 #'
@@ -20,21 +19,21 @@ render_chat_history_ui <- function(history) {
     }
 
     if (is.null(history_to_display) || length(history_to_display) == 0) {
-      # Translated text
+
       return(tags$p(tags$em("Start the conversation.")))
     }
 
     formatted_messages <- lapply(history_to_display, function(msg) {
-      # Translated placeholder
+      # placeholder
       content_display <- msg$content %||% "[NO CONTENT]"
       role_display <- msg$role %||% "unknown"
 
       # Styling system errors (checking for English "Error" prefix now)
-      # Original Polish prefixes are kept just in case, but English should be primary
+
       if (role_display == "system" && grepl("^(Error|Blad)(:| API:| execution error:| processing| wykonania Future:| przetwarzania)", content_display, ignore.case = TRUE)) {
         tags$div(
           style = "margin-bottom: 8px; padding: 8px; border-radius: 8px; background-color: #ffebee; color: #c62828; border: 1px dashed #ef9a9a; width: 90%; margin-right: 10%; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);",
-          # Translated label
+          # label
           tags$strong("System Information:"),
           tags$div(style = "white-space: pre-wrap; word-wrap: break-word;", content_display)
         )
@@ -50,7 +49,7 @@ render_chat_history_ui <- function(history) {
             else if (role_display == "assistant") "background-color: #f0f4c3; margin-right: 10%; width: 90%; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);"
             else "background-color: #eeeeee; font-style: italic; color: #555; border: 1px dashed #ccc;" # Style for 'unknown'
           ),
-          # Translated labels
+          # labels
           tags$strong(ifelse(role_display == "user", "You:", "Assistant:")),
           # white-space: pre-wrap; will handle new lines added in the "Attached:" section
           tags$div(style = "white-space: pre-wrap; word-wrap: break-word;", HTML(content_display))
@@ -76,13 +75,13 @@ render_staged_attachments_list_ui <- function(staged_files) {
   renderUI({
     # Check if staged_files is NULL, empty, or contains only empty strings
     if (is.null(staged_files) || length(staged_files) == 0 || all(staged_files == "")) {
-      # Translated text
+      # text
       tags$p(tags$em("No files"), style = "padding: 5px; margin: 0; color: #888; font-size: 0.9em;")
     } else {
       # Remove empty strings if any exist
       valid_files <- staged_files[nzchar(staged_files)]
       if (length(valid_files) == 0) {
-        # Translated text
+        # text
         tags$p(tags$em("No files"), style = "padding: 5px; margin: 0; color: #888; font-size: 0.9em;")
       } else {
         tagList(

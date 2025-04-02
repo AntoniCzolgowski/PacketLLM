@@ -1,7 +1,6 @@
 # chat_logic.R
 
 #' Add user message to the active conversation
-#'
 #' Calls add_message_to_active_history, which locks the model after the first message.
 #'
 #' @param text The user's message text.
@@ -35,13 +34,13 @@ get_assistant_response <- function() {
   conversation_history <- active_conv$history %||% list()
   attachments <- active_conv$attachments %||% list()
   conversation_temp <- active_conv$temperature %||% 0.5
-  # Default system message translated
+  # Default system message
   conversation_system_message <- active_conv$system_message %||% "You are a helpful assistant."
   conversation_model <- active_conv$model %||% "gpt-4o"
 
   message(paste("Preparing API request for model:", conversation_model))
 
-  # CHANGE: Conditional logic for o1/o3-mini models
+  # Conditional logic for o1/o3-mini models
   simplified_models <- c("o1", "o3-mini") # Already defined in openai_api.R, but kept here for clarity if run standalone
   use_simplified_logic <- conversation_model %in% simplified_models
 
@@ -107,7 +106,7 @@ get_assistant_response <- function() {
       message("No attachments to include.")
     }
 
-    # Check the last message (as before)
+    # Check the last message
     last_msg_index_standard <- length(api_messages)
     if (last_msg_index_standard == 0 || api_messages[[last_msg_index_standard]]$role != "user") {
       placeholder_text <- "(User is awaiting a response based on the available context)"
@@ -145,7 +144,7 @@ get_assistant_response <- function() {
     return(error_message)
   })
 
-  # Add assistant's response to history (as before)
+  # Add assistant's response to history
   # Updated error check to be case-insensitive and match English "Error"
   if (!grepl("^Error(:| API:)", response_text, ignore.case = TRUE)) {
     active_id_for_response <- get_active_conversation_id()

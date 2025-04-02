@@ -45,14 +45,14 @@ call_openai_chat <- function(messages, model, temperature = 0.5) {
 
   url <- "https://api.openai.com/v1/chat/completions"
 
-  # CHANGE: Create the basic payload
+  # Create the basic payload
   payload <- list(
     model = model,
     messages = messages
-    # Without temperature for now
+    # Without temperature
   )
 
-  # CHANGE: Conditionally add temperature only for supported models
+  # Conditionally add temperature only for supported models
   if (!model %in% simplified_models_list) {
     payload$temperature <- temperature
     message(paste("API Call: Including temperature parameter =", temperature, "for model", model))
@@ -72,7 +72,7 @@ call_openai_chat <- function(messages, model, temperature = 0.5) {
     httr::timeout(1200)
   )
 
-  # Error handling (no changes)
+  # Error handling
   if (httr::http_error(response)) {
     error_content <- httr::content(response, "text", encoding = "UTF-8")
     stop("Error during API call: ", httr::http_status(response)$message, "\nError content: ", error_content, call. = FALSE)
@@ -93,7 +93,7 @@ call_openai_chat <- function(messages, model, temperature = 0.5) {
   return(content_response$choices[[1]]$message$content)
 }
 
-# Helper %||% (no changes)
+# Helper %||%
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
