@@ -15,3 +15,27 @@ List of attachments or NULL if conversation doesn't exist.
 \description{
 Gets the list of attachments for the conversation with the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_attach_id <- create_new_conversation(activate = TRUE)
+
+# Get attachments for new conversation (empty list)
+print("Initial attachments by ID:")
+print(get_conversation_attachments(conv_attach_id)) # list()
+
+# Add an attachment
+add_attachment_to_active_conversation("file1.txt", "File content here")
+
+# Get attachments again
+print("Attachments after adding:")
+print(get_conversation_attachments(conv_attach_id))
+
+# Get attachments for non-existent ID
+print("Attachments for non-existent:")
+print(get_conversation_attachments("bad_id")) # NULL
+
+# Clean up
+delete_conversation(conv_attach_id)
+reset_history_manager()
+}

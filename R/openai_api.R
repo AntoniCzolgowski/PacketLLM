@@ -1,4 +1,4 @@
-# Plik: openai_api.R
+# openai_api.R
 
 #' List of available OpenAI models for selection in the UI
 #' @export
@@ -6,7 +6,7 @@ available_openai_models <- c("gpt-4o", "gpt-4o-mini", "gpt-4.1", "o1", "o3-mini"
 
 #' Models that do not support additional parameters (e.g., temperature)
 #' @noRd
-simplified_models_list <- c("o1", "o3-mini") # <-- gpt-4.1 NIE JEST TUTAJ DODAWANE
+simplified_models_list <- c("o1", "o3-mini")
 
 #' Check API Key
 #'
@@ -17,6 +17,23 @@ simplified_models_list <- c("o1", "o3-mini") # <-- gpt-4.1 NIE JEST TUTAJ DODAWA
 #'
 #' @return Returns TRUE if the API key is set; otherwise, stops execution.
 #' @export
+#' @examples
+#' \dontrun{
+#'   # This function requires the OPENAI_API_KEY environment variable to be set.
+#'   # If the key is set, it will return TRUE invisibly.
+#'   # If the key is NOT set, it will stop execution with an error message.
+#'
+#'   # Example when the key is likely set:
+#'   # check_api_key() # Returns TRUE invisibly if key exists
+#'
+#'   # Example when the key is likely NOT set (will throw an error):
+#'   # Sys.unsetenv("OPENAI_API_KEY") # Temporarily unset the key for demo
+#'   # tryCatch({
+#'   #   check_api_key()
+#'   # }, error = function(e) {
+#'   #   print(paste("Caught expected error:", e$message))
+#'   # })
+#' }
 check_api_key <- function() {
   key <- Sys.getenv("OPENAI_API_KEY")
   if (!nzchar(key)) {
@@ -36,6 +53,52 @@ check_api_key <- function() {
 #'
 #' @return Character string containing the model's response.
 #' @export
+#' @examples
+#' \dontrun{
+#'   # This example requires the OPENAI_API_KEY environment variable to be set
+#'   # and requires internet access to reach the OpenAI API.
+#'
+#'   # Ensure the API key is set in your environment before running:
+#'   # Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
+#'
+#'   # 1. Define the conversation history
+#'   example_messages <- list(
+#'     list(role = "system", content = "You are a helpful assistant providing concise answers."),
+#'     list(role = "user", content = "What is the main purpose of the `httr` package in R?")
+#'   )
+#'
+#'   # 2. Choose a model
+#'   # Use a model available in `available_openai_models`
+#'   # Check `simplified_models_list` to know if temperature is supported
+#'   selected_model <- "gpt-4o-mini" # Supports temperature
+#'
+#'   # 3. Call the API
+#'   api_response <- tryCatch({
+#'     call_openai_chat(
+#'       messages = example_messages,
+#'       model = selected_model,
+#'       temperature = 0.7
+#'      )
+#'   }, error = function(e) {
+#'     paste("API call failed:", e$message)
+#'   })
+#'
+#'   # 4. Print the response
+#'   print(api_response)
+#'
+#'   # Example with a simplified model (omits temperature)
+#'   # selected_model_simple <- "o3-mini" # Does not support temperature
+#'   # api_response_simple <- tryCatch({
+#'   #   call_openai_chat(
+#'   #     messages = example_messages,
+#'   #     model = selected_model_simple
+#'   #     # Temperature argument is ignored internally
+#'   #   )
+#'   # }, error = function(e) {
+#'   #   paste("API call failed:", e$message)
+#'   # })
+#'   # print(api_response_simple)
+#' }
 call_openai_chat <- function(messages, model, temperature = 0.5) {
   check_api_key()
 

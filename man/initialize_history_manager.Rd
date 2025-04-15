@@ -12,3 +12,15 @@ ID of the first created conversation.
 \description{
 Clears the state and creates the first, empty conversation.
 }
+\examples{
+# Initialize the manager
+first_conv_id <- initialize_history_manager()
+print(paste("First conversation ID:", first_conv_id))
+
+# Verify initialization
+print(paste("Active ID after init:", get_active_conversation_id())) # Should be NULL initially
+print(paste("Total conversations after init:", length(get_all_conversation_ids())))
+
+# Clean up (reset state for other examples if needed)
+reset_history_manager()
+}

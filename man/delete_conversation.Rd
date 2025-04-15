@@ -15,3 +15,30 @@ TRUE if deleted, FALSE if it did not exist.
 \description{
 Deletes the conversation with the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_del_id1 <- create_new_conversation(activate = FALSE, title = "To Delete")
+conv_del_id2 <- create_new_conversation(activate = TRUE, title = "To Keep Active")
+print(paste("Initial conversations:", paste(get_all_conversation_ids(), collapse=", ")))
+print(paste("Initial active ID:", get_active_conversation_id()))
+
+# Delete the non-active conversation
+deleted1 <- delete_conversation(conv_del_id1)
+print(paste("Deleted conv_del_id1:", deleted1))
+print(paste("Conversations after delete 1:", paste(get_all_conversation_ids(), collapse=", ")))
+print(paste("Active ID after delete 1:", get_active_conversation_id())) # Should be unchanged
+
+# Delete the active conversation
+deleted2 <- delete_conversation(conv_del_id2)
+print(paste("Deleted conv_del_id2:", deleted2))
+print(paste("Conversations after delete 2:", paste(get_all_conversation_ids(), collapse=", ")))
+print(paste("Active ID after delete 2:", get_active_conversation_id())) # Should be NULL
+
+# Try deleting a non-existent conversation
+deleted3 <- delete_conversation("conv_non_existent")
+print(paste("Deleted non-existent:", deleted3))
+
+# Clean up
+reset_history_manager()
+}

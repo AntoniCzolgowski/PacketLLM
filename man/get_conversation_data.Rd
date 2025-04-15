@@ -15,3 +15,23 @@ List with conversation data or NULL if it doesn't exist.
 \description{
 Gets the full conversation data object for the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_getdata_id <- create_new_conversation(title = "Data Test")
+set_conversation_temperature(conv_getdata_id, 0.9)
+
+# Get conversation data by ID
+data_obj <- get_conversation_data(conv_getdata_id)
+if (!is.null(data_obj)) {
+  print("Conversation data object:")
+  print(str(data_obj))
+}
+
+# Get data for non-existent ID
+print(paste("Data for non-existent:", is.null(get_conversation_data("bad_id")))) # TRUE
+
+# Clean up
+delete_conversation(conv_getdata_id)
+reset_history_manager()
+}

@@ -12,3 +12,22 @@ Invisible NULL.
 \description{
 Resets the entire state of the history manager
 }
+\examples{
+# Setup: Initialize and add some data
+reset_history_manager() # Ensure clean start
+initialize_history_manager()
+conv_reset_id <- create_new_conversation(activate = TRUE)
+add_message_to_active_history("user", "Message before reset")
+print(paste("Conversations before reset:", length(get_all_conversation_ids())))
+print(paste("Active ID before reset:", get_active_conversation_id()))
+
+# Reset the manager
+reset_history_manager()
+
+# Verify state after reset
+print(paste("Conversations after reset:", length(get_all_conversation_ids()))) # 0
+print(paste("Active ID after reset:", is.null(get_active_conversation_id()))) # TRUE
+
+# Note: After reset, you might need to initialize again if needed
+# initialize_history_manager()
+}

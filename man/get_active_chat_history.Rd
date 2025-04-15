@@ -12,3 +12,29 @@ List of messages or an empty list.
 \description{
 Gets the chat history for the active conversation
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_hist_id <- create_new_conversation(activate = TRUE)
+
+# Get history when empty
+print("Initial history:")
+print(get_active_chat_history())
+
+# Add messages
+add_message_to_active_history("user", "Question 1")
+add_message_to_active_history("assistant", "Answer 1")
+
+# Get history after adding messages
+print("History after messages:")
+print(get_active_chat_history())
+
+# Deactivate and check (should be empty list)
+set_active_conversation(NULL)
+print("History when none active:")
+print(get_active_chat_history())
+
+# Clean up
+delete_conversation(conv_hist_id)
+reset_history_manager()
+}

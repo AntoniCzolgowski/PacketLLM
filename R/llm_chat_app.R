@@ -13,6 +13,23 @@
 #' @import future promises httr pdftools readtext tools
 #' @importFrom utils tail head
 #' @importFrom stats setNames
+#' @examples
+#' \dontrun{
+#' # This function launches an interactive Shiny gadget.
+#' # It should be run in an interactive R session, preferably within RStudio.
+#'
+#' # Ensure necessary setup like the OpenAI API key environment variable
+#' # might be needed for the application's full functionality once launched.
+#' # Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
+#'
+#' # Launch the application
+#' run_llm_chat_app()
+#'
+#' # The application will open in the RStudio Viewer or a separate window.
+#' # Interaction happens within the app's UI.
+#' # To stop the app, you might need to close its window or stop the R process
+#' # if run directly in the console, or click the 'X' button in the app's UI.
+#' }
 run_llm_chat_app <- function() {
 
   # --- Package Resources ---

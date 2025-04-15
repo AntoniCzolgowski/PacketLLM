@@ -1,12 +1,18 @@
 Package: PacketLLM
-Title: Integracja modeli OpenAI w RStudio
+Title: OpenAI Model Integration in RStudio
 Version: 0.1.0
 Authors@R: 
     person("Antoni", "Czolgowski", email = "antoni.czolgowski@gmail.com", role = c("aut", "cre"))
-Description: Pakiet PacketLLM umożliwia integrację modeli językowych OpenAI 
-    z RStudio. Ułatwia wgrywanie plików (R, PDF, DOCX) oraz prowadzenie interaktywnych 
-    konwersacji z modelem, pozwalając na generowanie kodu R oraz analizę treści dokumentów 
-    przy użyciu API OpenAI.
+Description: Offers an interactive RStudio gadget interface for communicating 
+    with OpenAI's large language models (e.g., 'gpt-4o', 'gpt-4.1'). 
+    Enables users to conduct multiple chat conversations simultaneously 
+    in separate tabs. Supports uploading local files ('R', 'PDF', 'DOCX') 
+    to provide context for the models. Allows per-conversation configuration 
+    of model parameters such as temperature and system messages (where 
+    supported by the model). API interactions are performed asynchronously 
+    to avoid blocking the R console. Useful for tasks like code generation, 
+    text summarization, and document analysis directly within the RStudio 
+    environment. Requires an OpenAI API key set as an environment variable.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -23,4 +29,12 @@ Imports:
     shinyjs,
     stats,      
     tools,      
-    utils       
+    utils      
+Depends:
+    R (>= 4.1.0)
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+VignetteBuilder: knitr

@@ -12,3 +12,25 @@ ID of the active conversation (string) or NULL.
 \description{
 Gets the ID of the active conversation
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_get_id <- create_new_conversation(activate = FALSE)
+
+# Check when no conversation is active
+print(paste("Active ID initially:", get_active_conversation_id())) # NULL
+
+# Activate the conversation
+set_active_conversation(conv_get_id)
+
+# Get the active ID
+print(paste("Active ID after set:", get_active_conversation_id())) # conv_get_id
+
+# Deactivate
+set_active_conversation(NULL)
+print(paste("Active ID after unset:", get_active_conversation_id())) # NULL
+
+# Clean up
+delete_conversation(conv_get_id)
+reset_history_manager()
+}

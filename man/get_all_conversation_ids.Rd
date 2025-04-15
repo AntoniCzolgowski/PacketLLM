@@ -12,3 +12,25 @@ Character vector with conversation IDs.
 \description{
 Gets a list of IDs of all existing conversations
 }
+\examples{
+# Setup
+reset_history_manager()
+print(paste("IDs initially:", paste(get_all_conversation_ids(), collapse=","))) # Empty
+
+# Create conversations
+conv_all_id1 <- create_new_conversation()
+conv_all_id2 <- create_new_conversation()
+
+# Get all IDs
+all_ids <- get_all_conversation_ids()
+print(paste("IDs after creation:", paste(all_ids, collapse=",")))
+print(paste("Number of conversations:", length(all_ids)))
+
+# Delete one and check again
+delete_conversation(conv_all_id1)
+print(paste("IDs after deletion:", paste(get_all_conversation_ids(), collapse=",")))
+
+# Clean up
+delete_conversation(conv_all_id2) # Delete the remaining one
+reset_history_manager()
+}

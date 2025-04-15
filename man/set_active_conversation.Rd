@@ -15,3 +15,31 @@ Invisible NULL.
 \description{
 Sets the active conversation
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_set_id1 <- create_new_conversation(activate = FALSE, title = "Conv 1")
+conv_set_id2 <- create_new_conversation(activate = FALSE, title = "Conv 2")
+print(paste("Initial active ID:", get_active_conversation_id())) # NULL
+
+# Set conv1 as active
+set_active_conversation(conv_set_id1)
+print(paste("Active ID after set 1:", get_active_conversation_id())) # conv_set_id1
+
+# Set conv2 as active
+set_active_conversation(conv_set_id2)
+print(paste("Active ID after set 2:", get_active_conversation_id())) # conv_set_id2
+
+# Set non-existent ID (should warn and not change active ID)
+set_active_conversation("conv_non_existent")
+print(paste("Active ID after set non-existent:", get_active_conversation_id())) # conv_set_id2
+
+# Deactivate
+set_active_conversation(NULL)
+print(paste("Active ID after set NULL:", get_active_conversation_id())) # NULL
+
+# Clean up
+delete_conversation(conv_set_id1)
+delete_conversation(conv_set_id2)
+reset_history_manager()
+}

@@ -17,3 +17,32 @@ TRUE if the model was set, FALSE otherwise.
 \description{
 Checks the \code{model_locked} flag set after the first assistant response.
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_set_model_id <- create_new_conversation(activate = TRUE)
+print(paste("Initial model:", get_conversation_model(conv_set_model_id)))
+
+# Set a new valid model (assuming "gpt-4.1" is in available_openai_models)
+result_set <- set_conversation_model(conv_set_model_id, "gpt-4.1")
+print(paste("Model set successful:", result_set))
+print(paste("Model after set:", get_conversation_model(conv_set_model_id)))
+
+# Try setting an invalid model name
+result_invalid <- set_conversation_model(conv_set_model_id, "invalid-model-name")
+print(paste("Invalid model set successful:", result_invalid))
+print(paste("Model after invalid set:", get_conversation_model(conv_set_model_id))) # Unchanged
+
+# Simulate conversation start (add assistant message to lock model)
+add_message_to_active_history("user", "Lock question")
+add_message_to_active_history("assistant", "Lock answer") # This locks it
+
+# Try setting model after lock (should fail)
+result_locked <- set_conversation_model(conv_set_model_id, "gpt-4o")
+print(paste("Model set after lock successful:", result_locked))
+print(paste("Model after locked attempt:", get_conversation_model(conv_set_model_id))) # Unchanged
+
+# Clean up
+delete_conversation(conv_set_model_id)
+reset_history_manager()
+}

@@ -17,3 +17,28 @@ TRUE if set, FALSE if conversation doesn't exist or value is invalid.
 \description{
 Sets the temperature for the conversation with the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_temp_id <- create_new_conversation()
+initial_temp <- get_conversation_data(conv_temp_id)$temperature
+print(paste("Initial temperature:", initial_temp))
+
+# Set a valid temperature
+result_valid <- set_conversation_temperature(conv_temp_id, 0.85)
+print(paste("Valid set successful:", result_valid))
+print(paste("Temp after valid set:", get_conversation_data(conv_temp_id)$temperature))
+
+# Set an invalid temperature (outside 0-1)
+result_invalid <- set_conversation_temperature(conv_temp_id, 1.5)
+print(paste("Invalid set successful:", result_invalid))
+print(paste("Temp after invalid set:", get_conversation_data(conv_temp_id)$temperature)) # Unchanged
+
+# Try on non-existent ID
+result_bad_id <- set_conversation_temperature("bad_id", 0.5)
+print(paste("Set on bad ID successful:", result_bad_id))
+
+# Clean up
+delete_conversation(conv_temp_id)
+reset_history_manager()
+}

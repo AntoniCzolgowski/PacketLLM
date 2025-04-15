@@ -12,3 +12,30 @@ List of attachments or an empty list.
 \description{
 Gets the list of attachments for the active conversation
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_getactiveattach_id <- create_new_conversation(activate = TRUE)
+
+# Get attachments when none added
+print("Attachments initially:")
+print(get_active_conversation_attachments()) # list()
+
+# Add some attachments
+add_attachment_to_active_conversation("data.csv", "col1,col2\n1,2")
+add_attachment_to_active_conversation("notes.txt", "Reminder")
+
+# Get attachments again
+print("Attachments after adding:")
+attachments_list <- get_active_conversation_attachments()
+print(attachments_list)
+print(paste("Number of attachments:", length(attachments_list)))
+
+# Deactivate and check (should be empty list)
+set_active_conversation(NULL)
+print("Attachments when none active:")
+print(get_active_conversation_attachments()) # list()
+
+# Clean up
+reset_history_manager()
+}

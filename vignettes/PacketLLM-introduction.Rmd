@@ -1,0 +1,123 @@
+---
+title: "Introduction to PacketLLM"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to PacketLLM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "figures/"
+)
+# Optionally, load the package if needed:
+# library(PacketLLM)
+```
+
+# Introduction
+
+Welcome to **PacketLLM**! This package provides a seamless way to interact with OpenAI's Large Language Models (LLMs) such as GPT-4o directly within your RStudio environment. It runs as an RStudio Gadget, offering a familiar chat interface without the need to switch between applications.
+
+With PacketLLM, you can:
+- Generate code and explanations.
+- Analyze text from uploaded files (.R, .pdf, .docx).
+- Manage multiple conversations in tabs.
+- Customize model behavior through settings.
+
+This vignette will guide you through the essential setup and basic usage.
+
+## Prerequisites: OpenAI API Key
+
+PacketLLM requires an OpenAI API key.
+
+- **Obtain an API Key:**  
+  Sign up on the OpenAI Platform and create an API key.
+  
+- **Configure the API Key:**  
+  The recommended method is to set the `OPENAI_API_KEY` environment variable.
+
+  **Using `.Renviron` (recommended):**
+  
+  Add the following line to your user or project `.Renviron` file (replace `'your_secret_api_key_here'` with your actual key):
+  
+  ```sh
+  OPENAI_API_KEY='your_secret_api_key_here'
+  ```
+  
+  You can open the file using:
+  
+  ```r
+  usethis::edit_r_environ()         # User-level
+  usethis::edit_r_environ("project")  # Project-level
+  ```
+  
+  **Important:** Restart your R session after editing `.Renviron`.
+
+  **Temporary Solution:**
+
+  For the current session only, run:
+  
+  ```r
+  Sys.setenv(OPENAI_API_KEY = "your_secret_api_key_here")
+  ```
+
+## Installation
+
+Install PacketLLM from GitHub:
+
+```r
+# Uncomment the next line if you need the remotes package
+# install.packages("remotes")
+remotes::install_github("AntoniCzolgowski/PacketLLM")
+```
+
+## Launching the Chat Gadget
+
+Once installed and your API key is set, launch the gadget from the R console:
+
+```r
+library(PacketLLM)
+run_llm_chat_app()
+```
+
+This command should be executed in an interactive RStudio session.
+
+## Understanding the Interface
+
+The PacketLLM interface consists of:
+
+- **Top Navigation Bar:**
+  - *Settings:* Configure the model, temperature, and system message (before sending the first message).
+  - *New Conversation:* Create a new chat tab.
+  - *Close App (X):* Exit the PacketLLM gadget.
+
+- **Conversation Tabs:**  
+  Switch between multiple chat sessions; each tab can be closed individually.
+
+- **Chat History Area:**  
+  Displays the dialogue between you and the AI.
+
+- **Input Area:**
+  - *+ Button:* Open a file browser to attach supported files (.R, .pdf, .docx) as context.
+  - *Attachments Staging Area:* Lists selected files pending for upload.
+  - *Text Input Box:* Where you type your message.
+  - *Send Button:* Send your message and any attached files to the model.
+
+## Basic Workflow
+
+1. **Launch the App:** Run `run_llm_chat_app()`.
+2. **Start Chatting:** Type your question or prompt.
+3. **Send Message:** Click the *Send* button.
+4. **Wait for Response:** The app will show a processing indicator while waiting for the model's reply.
+
+Optional steps:
+- **Add File Context:** Click the + button to attach files before sending.
+- **Start a New Conversation:** Click *New Conversation* for a fresh session.
+- **Adjust Settings:** Use *Settings* to change model options before sending the first message.
+
+## Exploring Further
+
+Experiment with different models, system prompts, and file attachments to enhance your workflow with PacketLLM. For issues or suggestions, please visit the GitHub Issues page.

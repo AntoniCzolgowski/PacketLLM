@@ -12,3 +12,27 @@ List representing the conversation or NULL.
 \description{
 Gets the full object of the active conversation
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_get_obj_id <- create_new_conversation(activate = TRUE, title = "Test Object")
+add_message_to_active_history("user", "Message for object test")
+
+# Get the active conversation object
+active_obj <- get_active_conversation()
+if (!is.null(active_obj)) {
+  print("Active conversation object:")
+  print(str(active_obj)) # Use str() for concise structure view
+} else {
+  print("No active conversation found.")
+}
+
+# Deactivate and try again
+set_active_conversation(NULL)
+active_obj_null <- get_active_conversation()
+print(paste("Active object when none active:", is.null(active_obj_null))) # TRUE
+
+# Clean up
+delete_conversation(conv_get_obj_id)
+reset_history_manager()
+}

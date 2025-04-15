@@ -17,3 +17,27 @@ TRUE if set, FALSE if conversation doesn't exist or value is invalid.
 \description{
 Sets the system message for the conversation with the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_sys_id <- create_new_conversation()
+initial_sys_msg <- get_conversation_data(conv_sys_id)$system_message
+print(paste("Initial system message:", initial_sys_msg))
+
+# Set a valid system message
+new_message = "You are an expert R programmer. Respond only with code."
+result_valid <- set_conversation_system_message(conv_sys_id, new_message)
+print(paste("Valid set successful:", result_valid))
+print(paste("System message after set:", get_conversation_data(conv_sys_id)$system_message))
+
+# Try setting an invalid message (e.g., not a string)
+result_invalid <- set_conversation_system_message(conv_sys_id, list("not a string"))
+print(paste("Invalid set successful:", result_invalid))
+# Check message after invalid attempt (break the long line)
+final_msg_after_invalid <- get_conversation_data(conv_sys_id)$system_message
+print(paste("System message after invalid:", final_msg_after_invalid)) # Unchanged
+
+# Clean up
+delete_conversation(conv_sys_id)
+reset_history_manager()
+}

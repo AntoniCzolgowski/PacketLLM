@@ -15,3 +15,21 @@ Title (string) or NULL if the conversation doesn't exist or has no title.
 \description{
 Gets the title of the conversation with the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_title_id1 <- create_new_conversation(title = "Specific Title")
+conv_title_id2 <- create_new_conversation() # Default title
+
+# Get title by ID
+print(paste("Title for ID1:", get_conversation_title(conv_title_id1)))
+print(paste("Title for ID2:", get_conversation_title(conv_title_id2)))
+
+# Get title for non-existent ID
+print(paste("Title for non-existent:", is.null(get_conversation_title("bad_id")))) # TRUE
+
+# Clean up
+delete_conversation(conv_title_id1)
+delete_conversation(conv_title_id2)
+reset_history_manager()
+}

@@ -17,3 +17,27 @@ Invisible NULL
 Add user message to the active conversation
 Calls add_message_to_active_history, which locks the model after the first message.
 }
+\examples{
+# This example modifies the internal state managed by history_manager.
+# Ensure history_manager is initialized if running standalone.
+
+# Setup: Create and activate a conversation
+conv_id_user <- tryCatch(create_new_conversation(activate = TRUE), error = function(e) NULL)
+
+if (!is.null(conv_id_user)) {
+  # Add a message from the user
+  add_user_message("Hello, this is my first message.")
+
+  # Verify the message was added (optional)
+  history <- get_active_chat_history()
+  print(tail(history, 1)) # Show the last message
+
+  # Clean up the conversation
+  delete_conversation(conv_id_user)
+} else {
+  print("Skipping example as conversation setup failed.")
+}
+
+# Reset active conversation if needed
+set_active_conversation(NULL)
+}

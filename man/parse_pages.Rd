@@ -16,3 +16,26 @@ A numeric vector containing the individual pages.
 This function processes a character string specifying a page range (e.g., "1-3,5")
 and returns a numeric vector.
 }
+\examples{
+# Example 1: Simple range and single page
+page_string1 <- "1-3, 5"
+parsed_pages1 <- parse_pages(page_string1)
+print(parsed_pages1) # Output: [1] 1 2 3 5
+
+# Example 2: Multiple ranges and single pages, with spaces
+page_string2 <- " 2, 4-6, 9 , 11-12 "
+parsed_pages2 <- parse_pages(page_string2)
+print(parsed_pages2) # Output: [1] 2 4 5 6 9 11 12
+
+# Example 3: Single number
+page_string3 <- "10"
+parsed_pages3 <- parse_pages(page_string3)
+print(parsed_pages3) # Output: [1] 10
+
+# Example 4: Invalid input (will cause an error)
+page_string_invalid <- "1-3, five"
+\dontrun{
+# This will stop with an error message about "five"
+tryCatch(parse_pages(page_string_invalid), error = function(e) print(e$message))
+}
+}

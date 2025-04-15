@@ -15,3 +15,19 @@ Model name (string) or NULL.
 \description{
 Gets the model name for the conversation with the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_model_id <- create_new_conversation() # Uses default model
+
+# Get the model for the conversation
+model_name <- get_conversation_model(conv_model_id)
+print(paste("Model for conversation:", model_name))
+
+# Check a non-existent conversation
+print(paste("Model for non-existent:", is.null(get_conversation_model("bad_id")))) # TRUE
+
+# Clean up
+delete_conversation(conv_model_id)
+reset_history_manager()
+}

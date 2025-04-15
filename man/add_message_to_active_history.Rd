@@ -22,3 +22,38 @@ A list indicating the result:
 Updates the conversation title based on content if it's the first user message.
 Sets the \code{model_locked} flag to TRUE on the first \strong{assistant} message.
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_add_id <- create_new_conversation(activate = TRUE, title = "Initial Title")
+
+# Add first user message (should set title)
+result1 <- add_message_to_active_history(role = "user", content = "This is the very first post.")
+print("Result after first user message:")
+print(result1)
+print(paste("New Title:", get_conversation_title(conv_add_id)))
+
+# Add another user message (should just add message)
+result2 <- add_message_to_active_history(role = "user", content = "Another question.")
+print("Result after second user message:")
+print(result2)
+
+# Add first assistant message (should lock model)
+result3 <- add_message_to_active_history(role = "assistant", content = "Here is the answer.")
+print("Result after first assistant message:")
+print(result3)
+print(paste("Is model locked?", is_conversation_started(conv_add_id)))
+
+# Add system message (just adds message)
+result4 <- add_message_to_active_history(role = "system", content = "System notification.")
+print("Result after system message:")
+print(result4)
+
+# Check final history
+print("Final history:")
+print(get_conversation_history(conv_add_id))
+
+# Clean up
+delete_conversation(conv_add_id)
+reset_history_manager()
+}

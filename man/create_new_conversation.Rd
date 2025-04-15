@@ -23,3 +23,26 @@ ID of the newly created conversation.
 \description{
 Adds a new conversation to the \code{.history_env} environment.
 }
+\examples{
+# Ensure manager is initialized (or reset)
+reset_history_manager()
+initialize_history_manager() # Creates one initial conversation
+
+# Create a new conversation without activating it
+conv1_id <- create_new_conversation(activate = FALSE, title = "My First Topic")
+print(paste("Created conv1 ID:", conv1_id))
+print(paste("Active ID:", get_active_conversation_id())) # Should still be the initial one
+
+# Create another conversation and activate it immediately
+conv2_id <- create_new_conversation(activate = TRUE, title = "My Second Topic")
+print(paste("Created conv2 ID:", conv2_id))
+print(paste("Active ID:", get_active_conversation_id())) # Should be conv2_id now
+
+# Check total conversations
+print(paste("Total conversations:", length(get_all_conversation_ids())))
+
+# Clean up
+delete_conversation(conv1_id)
+delete_conversation(conv2_id)
+reset_history_manager() # Reset fully
+}

@@ -9,6 +9,62 @@
 #'
 #' @return A character string containing the file content.
 #' @export
+#' @examples
+#' # --- Example for reading an R file ---
+#' # Create a temporary R file
+#' temp_r_file <- tempfile(fileext = ".R")
+#' writeLines(c("x <- 1", "print(x + 1)"), temp_r_file)
+#'
+#' # Read the content
+#' r_content <- read_file_content(temp_r_file)
+#' print(r_content)
+#'
+#' # Clean up the temporary file
+#' unlink(temp_r_file)
+#'
+#' # --- Example for reading a text file (simulates basic docx/pdf content) ---
+#' temp_txt_file <- tempfile(fileext = ".txt")
+#' # Simulate a docx by saving as txt and renaming (for example purposes only)
+#' temp_docx_sim_file <- sub("\\.txt$", ".docx", temp_txt_file)
+#' writeLines(c("This is the first line.", "This is the second line."), temp_txt_file)
+#' file.rename(temp_txt_file, temp_docx_sim_file)
+#'
+#' # Reading requires the 'readtext' package for .docx
+#' if (requireNamespace("readtext", quietly = TRUE)) {
+#'   docx_content <- tryCatch({
+#'     read_file_content(temp_docx_sim_file)
+#'   }, error = function(e) {
+#'     # Handle cases where readtext might fail even if installed
+#'     paste("Could not read simulated DOCX:", e$message)
+#'   })
+#'   print(docx_content)
+#' } else {
+#'   print("Skipping DOCX example: 'readtext' package not installed.")
+#' }
+#'
+#' # Clean up
+#' unlink(temp_docx_sim_file, force = TRUE) # Use force if rename was tricky
+#'
+#' # --- Example for PDF (requires pdftools, only run if installed) ---
+#' \dontrun{
+#' # This part requires the 'pdftools' package and a valid PDF file.
+#' # For a runnable example, you might need to include a small sample PDF
+#' # in your package's inst/extdata directory and use system.file().
+#'
+#' # Example assuming you have a PDF at 'path/to/your/file.pdf'
+#' # pdf_path <- "path/to/your/file.pdf"
+#' # if (file.exists(pdf_path) && requireNamespace("pdftools", quietly = TRUE)) {
+#' #   # Read all pages
+#' #   pdf_content_all <- read_file_content(pdf_path)
+#' #   print(substr(pdf_content_all, 1, 100)) # Print first 100 chars
+#' #
+#' #   # Read specific pages (e.g., page 1)
+#' #   pdf_content_page1 <- read_file_content(pdf_path, pages = 1)
+#' #   print(pdf_content_page1)
+#' # } else {
+#' #   print("Skipping PDF example: 'pdftools' not installed or file not found.")
+#' # }
+#' }
 read_file_content <- function(file_path, pages = NULL) {
   if (!file.exists(file_path)) {
     stop("File not found: ", file_path)
@@ -43,6 +99,11 @@ read_file_content <- function(file_path, pages = NULL) {
     return(doc$text)
 
   } else {
+    # For the example, we need to handle the simulated .txt as well
+    if (ext == "txt") {
+      lines <- readLines(file_path, warn = FALSE)
+      return(paste(lines, collapse = "\n"))
+    }
     stop("Unsupported file format: ", ext)
   }
 }
@@ -56,6 +117,28 @@ read_file_content <- function(file_path, pages = NULL) {
 #'
 #' @return A numeric vector containing the individual pages.
 #' @export
+#' @examples
+#' # Example 1: Simple range and single page
+#' page_string1 <- "1-3, 5"
+#' parsed_pages1 <- parse_pages(page_string1)
+#' print(parsed_pages1) # Output: [1] 1 2 3 5
+#'
+#' # Example 2: Multiple ranges and single pages, with spaces
+#' page_string2 <- " 2, 4-6, 9 , 11-12 "
+#' parsed_pages2 <- parse_pages(page_string2)
+#' print(parsed_pages2) # Output: [1] 2 4 5 6 9 11 12
+#'
+#' # Example 3: Single number
+#' page_string3 <- "10"
+#' parsed_pages3 <- parse_pages(page_string3)
+#' print(parsed_pages3) # Output: [1] 10
+#'
+#' # Example 4: Invalid input (will cause an error)
+#' page_string_invalid <- "1-3, five"
+#' \dontrun{
+#' # This will stop with an error message about "five"
+#' tryCatch(parse_pages(page_string_invalid), error = function(e) print(e$message))
+#' }
 parse_pages <- function(pages_str) {
   if (!is.character(pages_str) || length(pages_str) != 1) {
     stop("pages_str must be a single character string.")

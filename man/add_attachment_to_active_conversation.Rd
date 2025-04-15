@@ -17,3 +17,35 @@ TRUE if added, FALSE if a file with this name already exists or no active conver
 \description{
 Adds an attachment to the active conversation
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_addattach_id <- create_new_conversation(activate = TRUE)
+
+# Add a first attachment
+result1 <- add_attachment_to_active_conversation("report.txt", "Summary of findings.")
+print(paste("Added first attachment:", result1))
+print("Attachments after first add:")
+print(get_active_conversation_attachments())
+
+# Add a second, different attachment
+result2 <- add_attachment_to_active_conversation("code.R", "x <- function(y) { y + 1 }")
+print(paste("Added second attachment:", result2))
+print("Attachments after second add:")
+print(get_active_conversation_attachments())
+
+# Try adding an attachment with the same name (should fail)
+result3 <- add_attachment_to_active_conversation("report.txt", "Updated summary.")
+print(paste("Added duplicate name attachment:", result3))
+print("Attachments after duplicate attempt:")
+print(get_active_conversation_attachments()) # Should be unchanged from previous step
+
+# Try adding when no conversation is active
+set_active_conversation(NULL)
+result4 <- add_attachment_to_active_conversation("another.txt", "Content")
+print(paste("Added attachment when none active:", result4))
+
+# Clean up
+reset_history_manager() # Also deletes the conversation
+# delete_conversation(conv_addattach_id) # Not needed after reset
+}

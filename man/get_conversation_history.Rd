@@ -15,3 +15,28 @@ List of messages or NULL if conversation doesn't exist.
 \description{
 Gets the chat history for the conversation with the given ID
 }
+\examples{
+# Setup
+reset_history_manager()
+conv_gethist_id <- create_new_conversation(activate = TRUE)
+
+# Get history for new conversation (should be empty list or NULL depending on implementation)
+print("Initial history by ID:")
+print(get_conversation_history(conv_gethist_id)) # Likely list()
+
+# Add messages
+add_message_to_active_history("user", "Hi there")
+add_message_to_active_history("assistant", "Hello")
+
+# Get history again
+print("History after messages:")
+print(get_conversation_history(conv_gethist_id))
+
+# Get history for non-existent ID
+print("History for non-existent:")
+print(get_conversation_history("bad_id")) # Should be NULL
+
+# Clean up
+delete_conversation(conv_gethist_id)
+reset_history_manager()
+}
