@@ -1,12 +1,12 @@
-# openai_api.R
+# Plik: openai_api.R
 
 #' List of available OpenAI models for selection in the UI
 #' @export
-available_openai_models <- c("gpt-4o", "gpt-4o-mini", "o1", "o3-mini")
+available_openai_models <- c("gpt-4o", "gpt-4o-mini", "gpt-4.1", "o1", "o3-mini") # <-- DODANO gpt-4.1 TUTAJ
 
 #' Models that do not support additional parameters (e.g., temperature)
 #' @noRd
-simplified_models_list <- c("o1", "o3-mini")
+simplified_models_list <- c("o1", "o3-mini") # <-- gpt-4.1 NIE JEST TUTAJ DODAWANE
 
 #' Check API Key
 #'
@@ -53,6 +53,8 @@ call_openai_chat <- function(messages, model, temperature = 0.5) {
   )
 
   # Conditionally add temperature only for supported models
+  # Ponieważ gpt-4.1 NIE znajduje się w simplified_models_list,
+  # ten warunek poprawnie doda dla niego parametr temperatury.
   if (!model %in% simplified_models_list) {
     payload$temperature <- temperature
     message(paste("API Call: Including temperature parameter =", temperature, "for model", model))
