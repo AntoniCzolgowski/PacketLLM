@@ -7,13 +7,18 @@
 get_conversation_attachments(id)
 }
 \arguments{
-\item{id}{Conversation ID.}
+\item{id}{Character string. The ID of the conversation.}
 }
 \value{
-List of attachments or NULL if conversation doesn't exist.
+List or \code{NULL}. A list where each element is itself a list containing
+\code{name} (character) and \code{content} (character) for an attachment
+associated with the conversation specified by \code{id}. Returns \code{NULL} if
+the conversation does not exist. Returns an empty list (\code{list()}) if
+the conversation exists but has no attachments.
 }
 \description{
-Gets the list of attachments for the conversation with the given ID
+Retrieves the list of attachments (files provided as context) associated with
+a specific conversation ID.
 }
 \examples{
 # Setup
@@ -24,7 +29,7 @@ conv_attach_id <- create_new_conversation(activate = TRUE)
 print("Initial attachments by ID:")
 print(get_conversation_attachments(conv_attach_id)) # list()
 
-# Add an attachment
+# Add an attachment using the exported function
 add_attachment_to_active_conversation("file1.txt", "File content here")
 
 # Get attachments again
@@ -36,6 +41,5 @@ print("Attachments for non-existent:")
 print(get_conversation_attachments("bad_id")) # NULL
 
 # Clean up
-delete_conversation(conv_attach_id)
 reset_history_manager()
 }

@@ -14,7 +14,9 @@ call_openai_chat(messages, model, temperature = 0.5)
 \item{temperature}{Temperature parameter (used only for models that support it).}
 }
 \value{
-Character string containing the model's response.
+Character string containing the model's response text, or \code{NULL} if the
+response structure is unexpected. If an API or HTTP error occurs,
+the function stops execution with an error message.
 }
 \description{
 Function sends the conversation history to the OpenAI API and returns the model's response.
@@ -24,22 +26,20 @@ For models in \code{simplified_models_list}, it does NOT send the \code{temperat
 \dontrun{
   # This example requires the OPENAI_API_KEY environment variable to be set
   # and requires internet access to reach the OpenAI API.
-
-  # Ensure the API key is set in your environment before running:
+  # Before running, ensure the key is set, e.g., using:
   # Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
+  # Remember to replace "your_actual_openai_api_key" with your real key.
 
   # 1. Define the conversation history
   example_messages <- list(
     list(role = "system", content = "You are a helpful assistant providing concise answers."),
-    list(role = "user", content = "What is the main purpose of the `httr` package in R?")
+    list(role = "user", content = "What is the main purpose of the 'httr' package in R?")
   )
 
-  # 2. Choose a model
-  # Use a model available in `available_openai_models`
-  # Check `simplified_models_list` to know if temperature is supported
+  # 2. Choose a model (ensure it's in available_openai_models)
   selected_model <- "gpt-4o-mini" # Supports temperature
 
-  # 3. Call the API
+  # 3. Call the API using tryCatch for safety
   api_response <- tryCatch({
     call_openai_chat(
       messages = example_messages,
@@ -47,23 +47,32 @@ For models in \code{simplified_models_list}, it does NOT send the \code{temperat
       temperature = 0.7
      )
   }, error = function(e) {
+    # Handle potential errors (API key missing, network issues, API errors)
     paste("API call failed:", e$message)
   })
 
-  # 4. Print the response
+  # 4. Print the response (or error message)
   print(api_response)
 
   # Example with a simplified model (omits temperature)
-  # selected_model_simple <- "o3-mini" # Does not support temperature
-  # api_response_simple <- tryCatch({
-  #   call_openai_chat(
-  #     messages = example_messages,
-  #     model = selected_model_simple
-  #     # Temperature argument is ignored internally
-  #   )
-  # }, error = function(e) {
-  #   paste("API call failed:", e$message)
-  # })
-  # print(api_response_simple)
+  selected_model_simple <- "o3-mini" # Does not support temperature
+
+  # Check if this model is actually available in your package installation
+  if(selected_model_simple \%in\% PacketLLM::available_openai_models) {
+    api_response_simple <- tryCatch({
+      call_openai_chat(
+        messages = example_messages,
+        model = selected_model_simple
+        # Temperature argument is ignored internally by the function
+      )
+    }, error = function(e) {
+      paste("API call failed:", e$message)
+    })
+    print(api_response_simple)
+  } else {
+     # Use message() for console output that can be suppressed if needed
+     message(paste("Skipping simplified model example:",
+                    selected_model_simple, "not in available_openai_models."))
+  }
 }
 }

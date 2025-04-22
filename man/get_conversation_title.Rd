@@ -7,29 +7,30 @@
 get_conversation_title(id)
 }
 \arguments{
-\item{id}{Conversation ID.}
+\item{id}{Character string. The ID of the conversation whose title is requested.}
 }
 \value{
-Title (string) or NULL if the conversation doesn't exist or has no title.
+Character string or \code{NULL}. The title of the conversation associated
+with the specified \code{id}. Returns \code{NULL} if the conversation does not exist.
+Returns a placeholder string like \samp{[No Title - ID: ...]} if the title
+field happens to be \code{NULL} internally (should not normally occur).
 }
 \description{
-Gets the title of the conversation with the given ID
+Retrieves the title associated with a specific conversation ID.
 }
 \examples{
 # Setup
 reset_history_manager()
 conv_title_id1 <- create_new_conversation(title = "Specific Title")
-conv_title_id2 <- create_new_conversation() # Default title
+conv_title_id2 <- create_new_conversation() # Default title generated
 
 # Get title by ID
 print(paste("Title for ID1:", get_conversation_title(conv_title_id1)))
 print(paste("Title for ID2:", get_conversation_title(conv_title_id2)))
 
 # Get title for non-existent ID
-print(paste("Title for non-existent:", is.null(get_conversation_title("bad_id")))) # TRUE
+print(paste("Title for non-existent:", get_conversation_title("bad_id"))) # NULL
 
 # Clean up
-delete_conversation(conv_title_id1)
-delete_conversation(conv_title_id2)
 reset_history_manager()
 }

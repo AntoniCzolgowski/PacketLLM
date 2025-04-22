@@ -7,10 +7,14 @@
 get_active_conversation_attachments()
 }
 \value{
-List of attachments or an empty list.
+List. A list where each element is a list containing \code{name} (character)
+and \code{content} (character) for an attachment associated with the currently
+active conversation. Returns an empty list (\code{list()}) if no conversation
+is active or if the active conversation has no attachments.
 }
 \description{
-Gets the list of attachments for the active conversation
+Retrieves the list of attachments (files provided as context) associated with
+the currently active conversation.
 }
 \examples{
 # Setup
@@ -29,7 +33,7 @@ add_attachment_to_active_conversation("notes.txt", "Reminder")
 print("Attachments after adding:")
 attachments_list <- get_active_conversation_attachments()
 print(attachments_list)
-print(paste("Number of attachments:", length(attachments_list)))
+print(paste("Number of attachments:", length(attachments_list))) # 2
 
 # Deactivate and check (should be empty list)
 set_active_conversation(NULL)

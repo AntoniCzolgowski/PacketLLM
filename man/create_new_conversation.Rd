@@ -11,38 +11,43 @@ create_new_conversation(
 )
 }
 \arguments{
-\item{activate}{Should the new conversation be set as active (default FALSE).}
+\item{activate}{Logical. Should the new conversation be set as active immediately? (Default: \code{FALSE}).}
 
-\item{add_initial_settings}{Should a default system message be added to the history (default TRUE).}
+\item{add_initial_settings}{Logical. Should default settings (model, temperature,
+system message) be added to the conversation structure? (Default: \code{TRUE}).}
 
-\item{title}{Initial title of the conversation (default generated based on time).}
+\item{title}{Character string or \code{NULL}. An initial title for the conversation.
+If \code{NULL} (default), a title is generated based on the creation time.}
 }
 \value{
-ID of the newly created conversation.
+Character string. The unique ID assigned to the newly created conversation.
 }
 \description{
-Adds a new conversation to the \code{.history_env} environment.
+Adds a new, empty conversation structure to the internal history store.
+Optionally sets the new conversation as the active one.
 }
 \examples{
 # Ensure manager is initialized (or reset)
 reset_history_manager()
 initialize_history_manager() # Creates one initial conversation
+initial_active_id <- get_active_conversation_id()
 
 # Create a new conversation without activating it
 conv1_id <- create_new_conversation(activate = FALSE, title = "My First Topic")
 print(paste("Created conv1 ID:", conv1_id))
-print(paste("Active ID:", get_active_conversation_id())) # Should still be the initial one
+current_active_id <- get_active_conversation_id() # Should still be the initial one
+print(paste("Active ID:", current_active_id))
 
 # Create another conversation and activate it immediately
 conv2_id <- create_new_conversation(activate = TRUE, title = "My Second Topic")
 print(paste("Created conv2 ID:", conv2_id))
-print(paste("Active ID:", get_active_conversation_id())) # Should be conv2_id now
+current_active_id_2 <- get_active_conversation_id() # Should be conv2_id now
+print(paste("Active ID:", current_active_id_2))
 
 # Check total conversations
-print(paste("Total conversations:", length(get_all_conversation_ids())))
+total_convs <- length(get_all_conversation_ids())
+print(paste("Total conversations:", total_convs))
 
-# Clean up
-delete_conversation(conv1_id)
-delete_conversation(conv2_id)
-reset_history_manager() # Reset fully
+# Clean up by resetting (which deletes all)
+reset_history_manager()
 }

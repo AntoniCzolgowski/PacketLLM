@@ -7,38 +7,48 @@
 set_conversation_temperature(id, temperature)
 }
 \arguments{
-\item{id}{Conversation ID.}
+\item{id}{Character string. The ID of the conversation.}
 
-\item{temperature}{New temperature value (number 0-1).}
+\item{temperature}{Numeric. The new temperature value, must be a single number
+between 0 and 1 (inclusive).}
 }
 \value{
-TRUE if set, FALSE if conversation doesn't exist or value is invalid.
+Logical. \code{TRUE} if the temperature was successfully updated. \code{FALSE} if
+the conversation does not exist or if the provided \code{temperature} value
+is invalid (not a single number between 0 and 1).
 }
 \description{
-Sets the temperature for the conversation with the given ID
+Updates the temperature setting (controls creativity/randomness of responses)
+for a specific conversation.
 }
 \examples{
 # Setup
 reset_history_manager()
 conv_temp_id <- create_new_conversation()
 initial_temp <- get_conversation_data(conv_temp_id)$temperature
-print(paste("Initial temperature:", initial_temp))
+print(paste("Initial temperature:", initial_temp)) # Default temp
 
 # Set a valid temperature
 result_valid <- set_conversation_temperature(conv_temp_id, 0.85)
-print(paste("Valid set successful:", result_valid))
-print(paste("Temp after valid set:", get_conversation_data(conv_temp_id)$temperature))
+print(paste("Valid set successful:", result_valid)) # TRUE
+temp_after_valid <- get_conversation_data(conv_temp_id)$temperature # 0.85
+print(paste("Temp after valid set:", temp_after_valid))
 
 # Set an invalid temperature (outside 0-1)
 result_invalid <- set_conversation_temperature(conv_temp_id, 1.5)
-print(paste("Invalid set successful:", result_invalid))
-print(paste("Temp after invalid set:", get_conversation_data(conv_temp_id)$temperature)) # Unchanged
+print(paste("Invalid set successful:", result_invalid)) # FALSE
+# MODIFIED LINE (was too long)
+temp_after_invalid <- get_conversation_data(conv_temp_id)$temperature # Unchanged (0.85)
+print(paste("Temp after invalid set:", temp_after_invalid))
+
+# Set an invalid temperature (wrong type)
+result_invalid_type <- set_conversation_temperature(conv_temp_id, "high")
+print(paste("Invalid type set successful:", result_invalid_type)) # FALSE
 
 # Try on non-existent ID
 result_bad_id <- set_conversation_temperature("bad_id", 0.5)
-print(paste("Set on bad ID successful:", result_bad_id))
+print(paste("Set on bad ID successful:", result_bad_id)) # FALSE
 
 # Clean up
-delete_conversation(conv_temp_id)
 reset_history_manager()
 }

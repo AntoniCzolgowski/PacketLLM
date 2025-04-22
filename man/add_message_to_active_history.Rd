@@ -7,20 +7,27 @@
 add_message_to_active_history(role, content)
 }
 \arguments{
-\item{role}{Role ("user", "assistant", "system").}
+\item{role}{Character string. The role of the message author, must be one of
+"user", "assistant", or "system".}
 
-\item{content}{Message content.}
+\item{content}{Character string. The content of the message.}
 }
 \value{
-A list indicating the result:
-- \code{list(type = "title_set", new_title = "...")} if a new title was set.
-- \code{list(type = "assistant_locked_model")} if the model was locked.
-- \code{list(type = "message_added")} in other cases of adding a message.
-- \code{list(type = "error", message = "...")} in case of an error.
+A list indicating the result of the operation. Possible structures:
+- \code{list(type = "title_set", new_title = "...")}: If this was the first
+user message and the title was automatically set.
+- \code{list(type = "assistant_locked_model")}: If this was the first assistant
+message, causing the model to be locked.
+- \code{list(type = "message_added")}: If a message was added without
+triggering title setting or model locking.
+- \code{list(type = "error", message = "...")}: If an error occurred (e.g.,
+no active conversation, invalid role, conversation vanished).
 }
 \description{
-Updates the conversation title based on content if it's the first user message.
-Sets the \code{model_locked} flag to TRUE on the first \strong{assistant} message.
+Appends a message with the specified role and content to the history list
+of the currently active conversation. Handles automatic title generation on
+the first user message and locks the conversation model upon adding the
+first assistant message.
 }
 \examples{
 # Setup
@@ -54,6 +61,5 @@ print("Final history:")
 print(get_conversation_history(conv_add_id))
 
 # Clean up
-delete_conversation(conv_add_id)
 reset_history_manager()
 }

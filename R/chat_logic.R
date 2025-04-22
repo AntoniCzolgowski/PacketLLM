@@ -1,10 +1,12 @@
 # chat_logic.R
 
 #' Add user message to the active conversation
-#' Calls add_message_to_active_history, which locks the model after the first message.
+#' Calls add_message_to_active_history, which handles model locking and title setting.
 #'
-#' @param text The user's message text.
-#' @return Invisible NULL
+#' @param text The user's message text (a single character string).
+#' @return Invisible `NULL` (`invisible(NULL)`). This function is called for its
+#'         side effect of adding a message to the conversation history.
+#'         Stops with an error if `text` is not a single character string.
 #' @export
 #' @examples
 #' # This example modifies the internal state managed by history_manager.
@@ -34,7 +36,8 @@ add_user_message <- function(text) {
     stop("Message text must be a single character string.")
   }
   # Call the function from history_manager, which handles the active conversation and model locking
-  add_message_to_active_history(role = "user", content = text)
+  # add_message_to_active_history returns a list, but add_user_message returns NULL
+  add_message_to_active_history(role = "user", content = text) # Pass default verbose setting
   invisible(NULL)
 }
 
@@ -50,11 +53,14 @@ add_user_message <- function(text) {
 #' @param conversation_temp Temperature setting.
 #' @param conversation_system_message System message setting.
 #' @param conversation_model Model name.
+#' @param verbose Logical. Should diagnostic messages be printed?
 #' @return A list containing `messages` (list) and `temperature` (numeric)
 #'         ready for the API call, or a list containing `error` if preparation fails.
 #' @noRd
 #' @importFrom utils getFromNamespace
-prepare_api_messages <- function(conversation_history, attachments, conversation_temp, conversation_system_message, conversation_model) {
+prepare_api_messages <- function(conversation_history, attachments, conversation_temp,
+                                 conversation_system_message, conversation_model,
+                                 verbose = getOption("PacketLLM.verbose", default = FALSE)) {
 
   # Get the list of simplified models. Access internal variable safely.
   simplified_models <- tryCatch(
@@ -71,7 +77,7 @@ prepare_api_messages <- function(conversation_history, attachments, conversation
   temp_to_use <- conversation_temp
 
   if (use_simplified_logic) {
-    message("Preparing API messages: Using simplified logic for model ", conversation_model)
+    if (verbose) message("Preparing API messages: Using simplified logic for model ", conversation_model)
     # Filter history, keeping only user and assistant roles
     api_messages <- Filter(function(msg) !is.null(msg$role) && msg$role %in% c("user", "assistant"), conversation_history)
     temp_to_use <- 0.5 # Simplified models ignore temperature, use default for internal consistency
@@ -81,28 +87,28 @@ prepare_api_messages <- function(conversation_history, attachments, conversation
     if (last_msg_index_simple == 0 || api_messages[[last_msg_index_simple]]$role != "user") {
       placeholder_text <- "(Awaiting response)"
       api_messages[[length(api_messages) + 1]] <- list(role = "user", content = placeholder_text)
-      message("Preparing API messages: Added placeholder user message for simplified model.")
+      if (verbose) message("Preparing API messages: Added placeholder user message for simplified model.")
     }
 
   } else {
     # Standard model logic
-    message("Preparing API messages: Using standard logic for model ", conversation_model)
+    if (verbose) message("Preparing API messages: Using standard logic for model ", conversation_model)
     api_messages <- conversation_history # Start with full history
 
     # Ensure system message is first and correct
     if (length(api_messages) == 0 || api_messages[[1]]$role != "system") {
-      message("Preparing API messages: Prepending system message.")
+      if (verbose) message("Preparing API messages: Prepending system message.")
       # Prepend the specific system message for this conversation
       api_messages <- c(list(list(role = "system", content = conversation_system_message)), api_messages)
     } else {
-      message("Preparing API messages: Ensuring current system message is used.")
+      if (verbose) message("Preparing API messages: Ensuring current system message is used.")
       # Ensure the system message content is the one currently set for the conversation
       api_messages[[1]]$content <- conversation_system_message
     }
 
     # Handle attachments by appending to the system message
     if (length(attachments) > 0) {
-      message("Preparing API messages: Including context from ", length(attachments), " attachments.")
+      if (verbose) message("Preparing API messages: Including context from ", length(attachments), " attachments.")
       attachments_text <- ""
       for (att in attachments) {
         # Ensure attachment format is valid before processing
@@ -126,13 +132,13 @@ prepare_api_messages <- function(conversation_history, attachments, conversation
           attachments_text,
           "\n--- END OF ATTACHED FILES CONTEXT ---"
         )
-        message("Preparing API messages: Appended attachment content to the system message.")
+        if (verbose) message("Preparing API messages: Appended attachment content to the system message.")
       } else {
-        message("Preparing API messages: No valid attachment content to append.")
+        if (verbose) message("Preparing API messages: No valid attachment content to append.")
       }
 
     } else {
-      message("Preparing API messages: No attachments to include.")
+      if (verbose) message("Preparing API messages: No attachments to include.")
     }
 
 
@@ -143,7 +149,7 @@ prepare_api_messages <- function(conversation_history, attachments, conversation
     if (last_msg_index_standard == 0 || api_messages[[last_msg_index_standard]]$role != "user") {
       placeholder_text <- "(User is awaiting a response based on the available context)"
       api_messages[[length(api_messages) + 1]] <- list(role = "user", content = placeholder_text)
-      message("Preparing API messages: Added placeholder user message for standard model API call.")
+      if (verbose) message("Preparing API messages: Added placeholder user message for standard model API call.")
     }
   } # End of standard model logic
 
@@ -154,11 +160,14 @@ prepare_api_messages <- function(conversation_history, attachments, conversation
 
 #' Get assistant response for the active conversation
 #'
-#' Sends the history to the API. For models `o1` and `o3-mini`, it sends only
-#' 'user' and 'assistant' roles, ignores temperature, system message, and attachments.
-#' For other models, it uses the full conversation settings.
+#' Sends the prepared history (including system message and attachments for standard
+#' models) to the OpenAI API and returns the assistant's response. Handles model-specific
+#' logic internally.
 #'
-#' @return Assistant's response text or an error message.
+#' @return Character string. Contains the assistant's response text. If an error
+#'         occurs during message preparation or the API call, a descriptive error
+#'         message (starting with "Error:" or "API Error:") is returned instead.
+#'         Returns "Critical Error: No active conversation..." if no conversation is active.
 #' @export
 #' @examples
 #' \dontrun{
@@ -174,7 +183,10 @@ prepare_api_messages <- function(conversation_history, attachments, conversation
 #'   # Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
 #'
 #'   # Get the response from the assistant
+#'   # For less console output during standard use, you can set the global option:
+#'   # options(PacketLLM.verbose = FALSE)
 #'   assistant_reply <- get_assistant_response()
+#'   # options(PacketLLM.verbose = TRUE) # Optionally set back for debugging
 #'
 #'   # Print the response
 #'   print(assistant_reply)
@@ -190,6 +202,9 @@ prepare_api_messages <- function(conversation_history, attachments, conversation
 #' }
 #' }
 get_assistant_response <- function() {
+  # Option checker helper function
+  is_verbose <- function() getOption("PacketLLM.verbose", default = FALSE)
+
   active_conv <- get_active_conversation()
   if (is.null(active_conv)) {
     error_content <- "Critical Error: No active conversation to process."
@@ -204,16 +219,17 @@ get_assistant_response <- function() {
   conversation_system_message <- active_conv$system_message %||% "You are a helpful assistant."
   conversation_model <- active_conv$model %||% "gpt-4o"
 
-  message(paste("Getting assistant response for model:", conversation_model))
+  if (is_verbose()) message(paste("Getting assistant response for model:", conversation_model))
 
-  # **MODIFICATION: Call the new helper function**
+  # Call the internal helper function to prepare messages, passing verbose status
   prepared_data <- tryCatch({
     prepare_api_messages(
       conversation_history = conversation_history,
       attachments = attachments,
       conversation_temp = conversation_temp,
       conversation_system_message = conversation_system_message,
-      conversation_model = conversation_model
+      conversation_model = conversation_model,
+      verbose = is_verbose() # Pass the verbose flag
     )
   }, error = function(e) {
     # Handle errors during message preparation
@@ -249,7 +265,7 @@ get_assistant_response <- function() {
   }
 
 
-  # **MODIFICATION: Use prepared data in API call**
+  # Use prepared data in API call
   response_text <- tryCatch({
     call_openai_chat(api_messages, model = conversation_model, temperature = temp_to_use)
   }, error = function(e) {
@@ -265,14 +281,22 @@ get_assistant_response <- function() {
     return(error_message)
   })
 
-  # Add assistant's response to history (no change here)
-  # Check for prep error OR api error
-  if (!grepl("^(Error preparing messages:|API Error:)", response_text, ignore.case = FALSE)) {
-    active_id_for_response <- get_active_conversation_id()
-    if (!is.null(active_id_for_response) && active_id_for_response %in% names(.history_env$conversations)) {
-      add_message_to_active_history(role = "assistant", content = response_text)
+  # Add assistant's valid response to history
+  # Check for prep error OR api error before adding
+  if (!grepl("^(Error preparing messages:|API Error:|Critical Error:)", response_text, ignore.case = TRUE)) {
+    # Check response_text is not NULL (call_openai_chat might return NULL on parse error)
+    if (!is.null(response_text)) {
+      active_id_for_response <- get_active_conversation_id()
+      if (!is.null(active_id_for_response) && active_id_for_response %in% names(.history_env$conversations)) {
+        # add_message_to_active_history returns a list, result not needed here
+        add_message_to_active_history(role = "assistant", content = response_text)
+      } else {
+        warning("Received API response, but the active conversation no longer exists or is not set.")
+      }
     } else {
-      warning("Received API response, but the active conversation no longer exists or is not set.")
+      warning("API call returned NULL or unexpected structure, assistant response not added to history.", call. = FALSE)
+      # Optionally return an error message here? Or rely on the warning from call_openai_chat?
+      # For now, return the NULL which indicates failure.
     }
   }
 
@@ -281,5 +305,5 @@ get_assistant_response <- function() {
 
 # Helper %||% (no change)
 `%||%` <- function(x, y) {
-  if (is.null(x)) y else x
+  if (is.null(x) || length(x) == 0) y else x
 }

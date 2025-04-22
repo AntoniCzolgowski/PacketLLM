@@ -7,19 +7,24 @@
 initialize_history_manager()
 }
 \value{
-ID of the first created conversation.
+Character string. The ID of the first, automatically created conversation
+after initialization.
 }
 \description{
-Clears the state and creates the first, empty conversation.
+Clears the current history state (all conversations and settings) and creates
+a single new, empty conversation, setting it as the active conversation.
+Optionally prints a message to the console in interactive sessions.
 }
 \examples{
-# Initialize the manager
+# Initialize the manager. A message might appear in the console if run interactively.
 first_conv_id <- initialize_history_manager()
 print(paste("First conversation ID:", first_conv_id))
 
 # Verify initialization
-print(paste("Active ID after init:", get_active_conversation_id())) # Should be NULL initially
-print(paste("Total conversations after init:", length(get_all_conversation_ids())))
+active_id_after_init <- get_active_conversation_id() # Should be first_conv_id
+print(paste("Active ID after init:", active_id_after_init))
+all_ids_after_init <- get_all_conversation_ids() # Should have 1 element
+print(paste("Total conversations after init:", length(all_ids_after_init)))
 
 # Clean up (reset state for other examples if needed)
 reset_history_manager()

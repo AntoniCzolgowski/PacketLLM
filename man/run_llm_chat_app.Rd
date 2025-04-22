@@ -6,6 +6,9 @@
 \usage{
 run_llm_chat_app()
 }
+\value{
+Returns the value passed to \code{shiny::stopApp()} when the application is closed (typically \code{NULL}). The primary purpose is the side effect of launching the interactive application.
+}
 \description{
 Launches the Shiny application as a Gadget in the RStudio Viewer pane,
 from where it can be opened in a separate window ("Show in new window").
@@ -19,14 +22,13 @@ attachments, and settings, without blocking the RStudio console when opened in a
 
 # Ensure necessary setup like the OpenAI API key environment variable
 # might be needed for the application's full functionality once launched.
-# Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
+# Example: Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
 
 # Launch the application
 run_llm_chat_app()
 
 # The application will open in the RStudio Viewer or a separate window.
 # Interaction happens within the app's UI.
-# To stop the app, you might need to close its window or stop the R process
-# if run directly in the console, or click the 'X' button in the app's UI.
+# To stop the app, close its window or click the 'X' button in the app's UI.
 }
 }

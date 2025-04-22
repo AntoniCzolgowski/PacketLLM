@@ -12,11 +12,14 @@ read_file_content(file_path, pages = NULL)
 \item{pages}{Optional. A numeric vector specifying which pages (for PDF) should be read.}
 }
 \value{
-A character string containing the file content.
+A character string containing the file content, with pages separated by
+double newlines for PDF files. Stops with an error if the file does not
+exist, the format is unsupported, or required packages (\code{pdftools} for PDF,
+\code{readtext} for DOCX) are not installed or if \code{pages} is not numeric when provided.
 }
 \description{
 This function reads the content of a file with the extension .R, .pdf, or .docx
-and returns it as a single character string.
+and returns it as a single character string. TXT files are also supported.
 For PDF files, if the \code{pages} parameter is provided, only the selected pages will be read.
 }
 \examples{
@@ -26,53 +29,51 @@ temp_r_file <- tempfile(fileext = ".R")
 writeLines(c("x <- 1", "print(x + 1)"), temp_r_file)
 
 # Read the content
-r_content <- read_file_content(temp_r_file)
+r_content <- tryCatch(read_file_content(temp_r_file), error = function(e) e$message)
 print(r_content)
 
 # Clean up the temporary file
 unlink(temp_r_file)
 
-# --- Example for reading a text file (simulates basic docx/pdf content) ---
+# --- Example for reading a TXT file ---
 temp_txt_file <- tempfile(fileext = ".txt")
-# Simulate a docx by saving as txt and renaming (for example purposes only)
-temp_docx_sim_file <- sub("\\\\.txt$", ".docx", temp_txt_file)
-writeLines(c("This is the first line.", "This is the second line."), temp_txt_file)
-file.rename(temp_txt_file, temp_docx_sim_file)
-
-# Reading requires the 'readtext' package for .docx
-if (requireNamespace("readtext", quietly = TRUE)) {
-  docx_content <- tryCatch({
-    read_file_content(temp_docx_sim_file)
-  }, error = function(e) {
-    # Handle cases where readtext might fail even if installed
-    paste("Could not read simulated DOCX:", e$message)
-  })
-  print(docx_content)
-} else {
-  print("Skipping DOCX example: 'readtext' package not installed.")
-}
-
-# Clean up
-unlink(temp_docx_sim_file, force = TRUE) # Use force if rename was tricky
+writeLines(c("Line one.", "Second line."), temp_txt_file)
+txt_content <- tryCatch(read_file_content(temp_txt_file), error = function(e) e$message)
+print(txt_content)
+unlink(temp_txt_file)
 
 # --- Example for PDF (requires pdftools, only run if installed) ---
 \dontrun{
 # This part requires the 'pdftools' package and a valid PDF file.
-# For a runnable example, you might need to include a small sample PDF
-# in your package's inst/extdata directory and use system.file().
+# Provide a path to an actual PDF file to test this functionality.
+# Replace "path/to/your/sample.pdf" with a real path.
 
-# Example assuming you have a PDF at 'path/to/your/file.pdf'
-# pdf_path <- "path/to/your/file.pdf"
-# if (file.exists(pdf_path) && requireNamespace("pdftools", quietly = TRUE)) {
-#   # Read all pages
-#   pdf_content_all <- read_file_content(pdf_path)
-#   print(substr(pdf_content_all, 1, 100)) # Print first 100 chars
-#
-#   # Read specific pages (e.g., page 1)
-#   pdf_content_page1 <- read_file_content(pdf_path, pages = 1)
-#   print(pdf_content_page1)
-# } else {
-#   print("Skipping PDF example: 'pdftools' not installed or file not found.")
-# }
+pdf_file_path <- "path/to/your/sample.pdf"
+
+# Check if pdftools is installed and the file exists
+if (requireNamespace("pdftools", quietly = TRUE) && file.exists(pdf_file_path)) {
+
+  # Example: Read all pages
+  pdf_content_all <- tryCatch(
+    read_file_content(pdf_file_path),
+    error = function(e) paste("Error reading all pages:", e$message)
+  )
+  # print(substr(pdf_content_all, 1, 100)) # Print first 100 chars
+
+  # Example: Read only page 1
+  pdf_content_page1 <- tryCatch(
+    read_file_content(pdf_file_path, pages = 1),
+    error = function(e) paste("Error reading page 1:", e$message)
+  )
+  # print(pdf_content_page1)
+
+} else if (!requireNamespace("pdftools", quietly = TRUE)) {
+  message("Skipping PDF example: 'pdftools' package not installed.")
+} else {
+  message("Skipping PDF example: File not found at '", pdf_file_path, "'")
 }
+}
+# Note: Reading DOCX files is also supported if the 'readtext' package
+# is installed, but a simple runnable example is difficult to create
+# without including a sample file or complex setup.
 }

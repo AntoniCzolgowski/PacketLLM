@@ -7,37 +7,44 @@
 delete_conversation(id)
 }
 \arguments{
-\item{id}{ID of the conversation to delete.}
+\item{id}{Character string. The ID of the conversation to delete.}
 }
 \value{
-TRUE if deleted, FALSE if it did not exist.
+Logical. \code{TRUE} if the conversation was found and successfully deleted.
+\code{FALSE} if no conversation with the specified \code{id} existed.
 }
 \description{
-Deletes the conversation with the given ID
+Removes the specified conversation from the internal history store. If the
+deleted conversation was the active one, the active conversation ID is reset
+to \code{NULL}.
 }
 \examples{
 # Setup
 reset_history_manager()
 conv_del_id1 <- create_new_conversation(activate = FALSE, title = "To Delete")
 conv_del_id2 <- create_new_conversation(activate = TRUE, title = "To Keep Active")
-print(paste("Initial conversations:", paste(get_all_conversation_ids(), collapse=", ")))
+all_ids_before_del <- get_all_conversation_ids()
+print(paste("Initial conversations:", paste(all_ids_before_del, collapse=", ")))
 print(paste("Initial active ID:", get_active_conversation_id()))
 
 # Delete the non-active conversation
 deleted1 <- delete_conversation(conv_del_id1)
 print(paste("Deleted conv_del_id1:", deleted1))
-print(paste("Conversations after delete 1:", paste(get_all_conversation_ids(), collapse=", ")))
+all_ids_after_del1 <- get_all_conversation_ids()
+print(paste("Conversations after delete 1:", paste(all_ids_after_del1, collapse=", ")))
 print(paste("Active ID after delete 1:", get_active_conversation_id())) # Should be unchanged
 
 # Delete the active conversation
 deleted2 <- delete_conversation(conv_del_id2)
 print(paste("Deleted conv_del_id2:", deleted2))
-print(paste("Conversations after delete 2:", paste(get_all_conversation_ids(), collapse=", ")))
+all_ids_after_del2 <- get_all_conversation_ids() # Should be empty now
+# MODIFIED LINE (was too long)
+print(paste("Conversations after delete 2:", paste(all_ids_after_del2, collapse=", ")))
 print(paste("Active ID after delete 2:", get_active_conversation_id())) # Should be NULL
 
 # Try deleting a non-existent conversation
 deleted3 <- delete_conversation("conv_non_existent")
-print(paste("Deleted non-existent:", deleted3))
+print(paste("Deleted non-existent:", deleted3)) # FALSE
 
 # Clean up
 reset_history_manager()

@@ -7,10 +7,14 @@
 reset_history_manager()
 }
 \value{
-Invisible NULL.
+Invisible \code{NULL} (\code{invisible(NULL)}). Called for its side effect of
+clearing the history state.
 }
 \description{
-Resets the entire state of the history manager
+Clears all stored conversations, resets the active conversation ID to \code{NULL},
+and resets the internal conversation counter used for generating IDs.
+Effectively returns the manager to its initial empty state. Optionally prints a message
+to the console in interactive sessions.
 }
 \examples{
 # Setup: Initialize and add some data
@@ -18,16 +22,18 @@ reset_history_manager() # Ensure clean start
 initialize_history_manager()
 conv_reset_id <- create_new_conversation(activate = TRUE)
 add_message_to_active_history("user", "Message before reset")
-print(paste("Conversations before reset:", length(get_all_conversation_ids())))
-print(paste("Active ID before reset:", get_active_conversation_id()))
+# MODIFIED LINE (was too long)
+conv_count_before <- length(get_all_conversation_ids()) # Should be 2 initially
+print(paste("Conversations before reset:", conv_count_before))
+print(paste("Active ID before reset:", get_active_conversation_id())) # ID of conv_reset_id
 
-# Reset the manager
+# Reset the manager. A message might appear in the console if run interactively.
 reset_history_manager()
 
 # Verify state after reset
 print(paste("Conversations after reset:", length(get_all_conversation_ids()))) # 0
-print(paste("Active ID after reset:", is.null(get_active_conversation_id()))) # TRUE
+print(paste("Active ID after reset:", get_active_conversation_id())) # NULL
 
-# Note: After reset, you might need to initialize again if needed
+# Note: After reset, you might need to initialize again if needed for subsequent operations
 # initialize_history_manager()
 }

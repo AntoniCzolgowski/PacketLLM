@@ -7,10 +7,12 @@
 get_active_conversation_id()
 }
 \value{
-ID of the active conversation (string) or NULL.
+Character string or \code{NULL}. The ID of the currently active conversation,
+or \code{NULL} if no conversation is active or if the previously active
+conversation ID points to a conversation that no longer exists.
 }
 \description{
-Gets the ID of the active conversation
+Retrieves the identifier of the conversation currently marked as active.
 }
 \examples{
 # Setup
@@ -31,6 +33,5 @@ set_active_conversation(NULL)
 print(paste("Active ID after unset:", get_active_conversation_id())) # NULL
 
 # Clean up
-delete_conversation(conv_get_id)
 reset_history_manager()
 }

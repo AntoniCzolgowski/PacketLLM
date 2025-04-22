@@ -7,13 +7,16 @@
 set_active_conversation(id)
 }
 \arguments{
-\item{id}{ID of the conversation to activate or NULL to deactivate.}
+\item{id}{Character string (the ID of the conversation to activate) or \code{NULL}.}
 }
 \value{
-Invisible NULL.
+Invisible \code{NULL} (\code{invisible(NULL)}). This function is called for its
+side effect of changing the active conversation state. It produces a
+warning if attempting to activate a non-existent conversation ID.
 }
 \description{
-Sets the active conversation
+Designates a conversation, specified by its ID, as the currently active one.
+Setting \code{id} to \code{NULL} deactivates any currently active conversation.
 }
 \examples{
 # Setup
@@ -32,14 +35,13 @@ print(paste("Active ID after set 2:", get_active_conversation_id())) # conv_set_
 
 # Set non-existent ID (should warn and not change active ID)
 set_active_conversation("conv_non_existent")
-print(paste("Active ID after set non-existent:", get_active_conversation_id())) # conv_set_id2
+active_after_invalid_set <- get_active_conversation_id() # Still conv_set_id2
+print(paste("Active ID after set non-existent:", active_after_invalid_set))
 
-# Deactivate
+# Deactivate by setting to NULL
 set_active_conversation(NULL)
 print(paste("Active ID after set NULL:", get_active_conversation_id())) # NULL
 
 # Clean up
-delete_conversation(conv_set_id1)
-delete_conversation(conv_set_id2)
 reset_history_manager()
 }

@@ -7,24 +7,27 @@
 get_conversation_history(id)
 }
 \arguments{
-\item{id}{Conversation ID.}
+\item{id}{Character string. The ID of the conversation.}
 }
 \value{
-List of messages or NULL if conversation doesn't exist.
+List or \code{NULL}. A list containing the message history (each element is a
+list with \code{role} and \code{content}) for the conversation specified by \code{id}.
+Returns \code{NULL} if the conversation does not exist. Returns an empty list
+(\code{list()}) if the conversation exists but has no history yet.
 }
 \description{
-Gets the chat history for the conversation with the given ID
+Retrieves the list of messages associated with a specific conversation ID.
 }
 \examples{
 # Setup
 reset_history_manager()
 conv_gethist_id <- create_new_conversation(activate = TRUE)
 
-# Get history for new conversation (should be empty list or NULL depending on implementation)
+# Get history for new conversation
 print("Initial history by ID:")
-print(get_conversation_history(conv_gethist_id)) # Likely list()
+print(get_conversation_history(conv_gethist_id)) # list()
 
-# Add messages
+# Add messages using the exported function
 add_message_to_active_history("user", "Hi there")
 add_message_to_active_history("assistant", "Hello")
 
@@ -34,9 +37,8 @@ print(get_conversation_history(conv_gethist_id))
 
 # Get history for non-existent ID
 print("History for non-existent:")
-print(get_conversation_history("bad_id")) # Should be NULL
+print(get_conversation_history("bad_id")) # NULL
 
 # Clean up
-delete_conversation(conv_gethist_id)
 reset_history_manager()
 }

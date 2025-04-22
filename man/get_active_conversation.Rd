@@ -7,10 +7,13 @@
 get_active_conversation()
 }
 \value{
-List representing the conversation or NULL.
+List or \code{NULL}. A list containing all data for the active conversation
+(id, title, history, attachments, settings, etc.), or \code{NULL} if no
+conversation is currently active.
 }
 \description{
-Gets the full object of the active conversation
+Retrieves the complete data structure (a list) associated with the currently
+active conversation.
 }
 \examples{
 # Setup
@@ -33,6 +36,5 @@ active_obj_null <- get_active_conversation()
 print(paste("Active object when none active:", is.null(active_obj_null))) # TRUE
 
 # Clean up
-delete_conversation(conv_get_obj_id)
 reset_history_manager()
 }

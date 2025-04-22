@@ -7,10 +7,13 @@
 get_active_chat_history()
 }
 \value{
-List of messages or an empty list.
+List. A list containing the message history (each element is a list
+with \code{role} and \code{content}) for the currently active conversation.
+Returns an empty list (\code{list()}) if no conversation is active or if
+the active conversation has no history yet.
 }
 \description{
-Gets the chat history for the active conversation
+Retrieves the list of messages associated with the currently active conversation.
 }
 \examples{
 # Setup
@@ -19,7 +22,7 @@ conv_hist_id <- create_new_conversation(activate = TRUE)
 
 # Get history when empty
 print("Initial history:")
-print(get_active_chat_history())
+print(get_active_chat_history()) # list()
 
 # Add messages
 add_message_to_active_history("user", "Question 1")
@@ -32,9 +35,8 @@ print(get_active_chat_history())
 # Deactivate and check (should be empty list)
 set_active_conversation(NULL)
 print("History when none active:")
-print(get_active_chat_history())
+print(get_active_chat_history()) # list()
 
 # Clean up
-delete_conversation(conv_hist_id)
 reset_history_manager()
 }

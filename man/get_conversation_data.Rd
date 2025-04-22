@@ -7,13 +7,16 @@
 get_conversation_data(id)
 }
 \arguments{
-\item{id}{Conversation ID.}
+\item{id}{Character string. The ID of the conversation.}
 }
 \value{
-List with conversation data or NULL if it doesn't exist.
+List or \code{NULL}. A list containing all stored data associated with the
+conversation specified by \code{id}. Returns \code{NULL} if the conversation
+does not exist.
 }
 \description{
-Gets the full conversation data object for the given ID
+Retrieves the complete data structure (a list) associated with a specific
+conversation ID, including its history, attachments, settings, etc.
 }
 \examples{
 # Setup
@@ -29,9 +32,9 @@ if (!is.null(data_obj)) {
 }
 
 # Get data for non-existent ID
-print(paste("Data for non-existent:", is.null(get_conversation_data("bad_id")))) # TRUE
+print("Data for non-existent:")
+print(get_conversation_data("bad_id")) # NULL
 
 # Clean up
-delete_conversation(conv_getdata_id)
 reset_history_manager()
 }

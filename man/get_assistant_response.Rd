@@ -7,12 +7,15 @@
 get_assistant_response()
 }
 \value{
-Assistant's response text or an error message.
+Character string. Contains the assistant's response text. If an error
+occurs during message preparation or the API call, a descriptive error
+message (starting with "Error:" or "API Error:") is returned instead.
+Returns "Critical Error: No active conversation..." if no conversation is active.
 }
 \description{
-Sends the history to the API. For models \code{o1} and \code{o3-mini}, it sends only
-'user' and 'assistant' roles, ignores temperature, system message, and attachments.
-For other models, it uses the full conversation settings.
+Sends the prepared history (including system message and attachments for standard
+models) to the OpenAI API and returns the assistant's response. Handles model-specific
+logic internally.
 }
 \examples{
 \dontrun{
@@ -28,7 +31,10 @@ if (!is.null(conv_id_resp)) {
   # Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
 
   # Get the response from the assistant
+  # For less console output during standard use, you can set the global option:
+  # options(PacketLLM.verbose = FALSE)
   assistant_reply <- get_assistant_response()
+  # options(PacketLLM.verbose = TRUE) # Optionally set back for debugging
 
   # Print the response
   print(assistant_reply)

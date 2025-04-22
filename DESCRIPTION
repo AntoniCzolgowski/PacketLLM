@@ -1,18 +1,20 @@
 Package: PacketLLM
-Title: OpenAI Model Integration in RStudio
+Title: Interactive 'OpenAI' Model Integration in 'RStudio'
 Version: 0.1.0
 Authors@R: 
     person("Antoni", "Czolgowski", email = "antoni.czolgowski@gmail.com", role = c("aut", "cre"))
-Description: Offers an interactive RStudio gadget interface for communicating 
-    with OpenAI's large language models (e.g., 'gpt-4o', 'gpt-4.1'). 
-    Enables users to conduct multiple chat conversations simultaneously 
-    in separate tabs. Supports uploading local files ('R', 'PDF', 'DOCX') 
-    to provide context for the models. Allows per-conversation configuration 
-    of model parameters such as temperature and system messages (where 
-    supported by the model). API interactions are performed asynchronously 
-    to avoid blocking the R console. Useful for tasks like code generation, 
-    text summarization, and document analysis directly within the RStudio 
-    environment. Requires an OpenAI API key set as an environment variable.
+Description: Offers an interactive 'RStudio' gadget interface for communicating 
+    with 'OpenAI' large language models (e.g., 'gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 
+    'o1', 'o3-mini') (<https://platform.openai.com/docs/api-reference>). 
+    Enables users to conduct multiple chat conversations simultaneously in 
+    separate tabs. Supports uploading local files (R, PDF, DOCX) to provide 
+    context for the models. Allows per-conversation configuration of model 
+    parameters such as temperature and system messages (where supported by 
+    the model). API interactions via the 'httr' package are performed 
+    asynchronously using 'promises' and 'future' to avoid blocking the R 
+    console. Useful for tasks like code generation, text summarization, 
+    and document analysis directly within the 'RStudio' environment. 
+    Requires an 'OpenAI' API key set as an environment variable.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

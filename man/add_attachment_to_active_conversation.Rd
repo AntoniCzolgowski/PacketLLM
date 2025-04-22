@@ -7,15 +7,21 @@
 add_attachment_to_active_conversation(name, content)
 }
 \arguments{
-\item{name}{Name of the attachment file.}
+\item{name}{Character string. The name of the attachment file (e.g., "script.R").}
 
-\item{content}{File content as a string.}
+\item{content}{Character string. The content of the file as a single string.}
 }
 \value{
-TRUE if added, FALSE if a file with this name already exists or no active conversation.
+Logical. \code{TRUE} if the attachment (consisting of \code{name} and \code{content})
+was successfully added to the active conversation's attachment list.
+\code{FALSE} if no conversation is active, the active conversation doesn't exist
+anymore, or if an attachment with the same \code{name} already exists in the
+active conversation.
 }
 \description{
-Adds an attachment to the active conversation
+Associates a file's name and content with the currently active conversation.
+This function prevents adding attachments with duplicate names to the same
+conversation.
 }
 \examples{
 # Setup
@@ -24,28 +30,27 @@ conv_addattach_id <- create_new_conversation(activate = TRUE)
 
 # Add a first attachment
 result1 <- add_attachment_to_active_conversation("report.txt", "Summary of findings.")
-print(paste("Added first attachment:", result1))
+print(paste("Added first attachment:", result1)) # TRUE
 print("Attachments after first add:")
 print(get_active_conversation_attachments())
 
 # Add a second, different attachment
 result2 <- add_attachment_to_active_conversation("code.R", "x <- function(y) { y + 1 }")
-print(paste("Added second attachment:", result2))
+print(paste("Added second attachment:", result2)) # TRUE
 print("Attachments after second add:")
 print(get_active_conversation_attachments())
 
 # Try adding an attachment with the same name (should fail)
 result3 <- add_attachment_to_active_conversation("report.txt", "Updated summary.")
-print(paste("Added duplicate name attachment:", result3))
+print(paste("Added duplicate name attachment:", result3)) # FALSE
 print("Attachments after duplicate attempt:")
-print(get_active_conversation_attachments()) # Should be unchanged from previous step
+print(get_active_conversation_attachments()) # Should be unchanged
 
 # Try adding when no conversation is active
 set_active_conversation(NULL)
 result4 <- add_attachment_to_active_conversation("another.txt", "Content")
-print(paste("Added attachment when none active:", result4))
+print(paste("Added attachment when none active:", result4)) # FALSE
 
 # Clean up
-reset_history_manager() # Also deletes the conversation
-# delete_conversation(conv_addattach_id) # Not needed after reset
+reset_history_manager()
 }

@@ -3,19 +3,21 @@
 \name{add_user_message}
 \alias{add_user_message}
 \title{Add user message to the active conversation
-Calls add_message_to_active_history, which locks the model after the first message.}
+Calls add_message_to_active_history, which handles model locking and title setting.}
 \usage{
 add_user_message(text)
 }
 \arguments{
-\item{text}{The user's message text.}
+\item{text}{The user's message text (a single character string).}
 }
 \value{
-Invisible NULL
+Invisible \code{NULL} (\code{invisible(NULL)}). This function is called for its
+side effect of adding a message to the conversation history.
+Stops with an error if \code{text} is not a single character string.
 }
 \description{
 Add user message to the active conversation
-Calls add_message_to_active_history, which locks the model after the first message.
+Calls add_message_to_active_history, which handles model locking and title setting.
 }
 \examples{
 # This example modifies the internal state managed by history_manager.

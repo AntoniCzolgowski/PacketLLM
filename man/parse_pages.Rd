@@ -10,11 +10,15 @@ parse_pages(pages_str)
 \item{pages_str}{Character string specifying pages, e.g., "1-3,5".}
 }
 \value{
-A numeric vector containing the individual pages.
+A numeric vector containing the unique page numbers specified in the
+input string, sorted in ascending order. Returns an empty integer vector
+if the input string is empty or contains only whitespace. Stops with an
+error if the input \code{pages_str} is not a single character string or if the
+format within the string is invalid (e.g., non-numeric parts, invalid ranges).
 }
 \description{
 This function processes a character string specifying a page range (e.g., "1-3,5")
-and returns a numeric vector.
+and returns a numeric vector containing the individual page numbers, sorted and unique.
 }
 \examples{
 # Example 1: Simple range and single page
@@ -22,20 +26,39 @@ page_string1 <- "1-3, 5"
 parsed_pages1 <- parse_pages(page_string1)
 print(parsed_pages1) # Output: [1] 1 2 3 5
 
-# Example 2: Multiple ranges and single pages, with spaces
-page_string2 <- " 2, 4-6, 9 , 11-12 "
+# Example 2: Multiple ranges and single pages, with spaces and duplicates
+page_string2 <- " 2, 4-6, 9 , 11-12, 5 "
 parsed_pages2 <- parse_pages(page_string2)
-print(parsed_pages2) # Output: [1] 2 4 5 6 9 11 12
+print(parsed_pages2) # Output: [1] 2 4 5 6 9 11 12 (sorted, unique)
 
 # Example 3: Single number
 page_string3 <- "10"
 parsed_pages3 <- parse_pages(page_string3)
 print(parsed_pages3) # Output: [1] 10
 
-# Example 4: Invalid input (will cause an error)
+# Example 4: Empty string input
+page_string_empty <- ""
+parsed_pages_empty <- parse_pages(page_string_empty)
+print(parsed_pages_empty) # Output: integer(0)
+
+# Example 5: Invalid input (non-numeric) - demonstrates error handling
 page_string_invalid <- "1-3, five"
 \dontrun{
 # This will stop with an error message about "five"
 tryCatch(parse_pages(page_string_invalid), error = function(e) print(e$message))
+}
+
+# Example 6: Invalid range format (missing end) - demonstrates error handling
+page_string_invalid_range <- "1-"
+\dontrun{
+# This will stop with an error message about invalid range format
+tryCatch(parse_pages(page_string_invalid_range), error = function(e) print(e$message))
+}
+
+# Example 7: Invalid range format (start > end) - demonstrates error handling
+page_string_invalid_order <- "5-3"
+\dontrun{
+# This will stop with an error message about invalid range values
+tryCatch(parse_pages(page_string_invalid_order), error = function(e) print(e$message))
 }
 }

@@ -7,15 +7,19 @@
 get_all_conversation_ids()
 }
 \value{
-Character vector with conversation IDs.
+Character vector. A vector containing the unique IDs of all currently
+stored conversations. Returns an empty character vector (\code{character(0)})
+if no conversations exist.
 }
 \description{
-Gets a list of IDs of all existing conversations
+Retrieves the unique identifiers for all conversations currently stored in the manager.
 }
 \examples{
 # Setup
 reset_history_manager()
-print(paste("IDs initially:", paste(get_all_conversation_ids(), collapse=","))) # Empty
+initial_ids <- get_all_conversation_ids() # Should be character(0)
+# MODIFIED LINE (was too long)
+print(paste("IDs initially:", paste(initial_ids, collapse=",")))
 
 # Create conversations
 conv_all_id1 <- create_new_conversation()
@@ -24,13 +28,13 @@ conv_all_id2 <- create_new_conversation()
 # Get all IDs
 all_ids <- get_all_conversation_ids()
 print(paste("IDs after creation:", paste(all_ids, collapse=",")))
-print(paste("Number of conversations:", length(all_ids)))
+print(paste("Number of conversations:", length(all_ids))) # 2
 
 # Delete one and check again
 delete_conversation(conv_all_id1)
-print(paste("IDs after deletion:", paste(get_all_conversation_ids(), collapse=",")))
+ids_after_del <- get_all_conversation_ids() # Only ID2
+print(paste("IDs after deletion:", paste(ids_after_del, collapse=",")))
 
 # Clean up
-delete_conversation(conv_all_id2) # Delete the remaining one
 reset_history_manager()
 }

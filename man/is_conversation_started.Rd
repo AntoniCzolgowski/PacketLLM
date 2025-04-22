@@ -7,14 +7,17 @@
 is_conversation_started(id)
 }
 \arguments{
-\item{id}{Conversation ID.}
+\item{id}{Character string. The ID of the conversation to check.}
 }
 \value{
-TRUE if the model is locked, FALSE otherwise or if the conversation doesn't exist.
+Logical. \code{TRUE} if the model for the conversation is locked,
+\code{FALSE} otherwise or if the conversation with the specified \code{id}
+does not exist.
 }
 \description{
-Checks if the \code{model_locked} flag is TRUE. The model is locked
-after the first \strong{assistant} message is added.
+Determines if the model for a given conversation is locked, which typically
+occurs after the first assistant message has been added. Once locked, the
+model for the conversation usually cannot be changed.
 }
 \examples{
 # Setup
@@ -28,17 +31,15 @@ print(paste("Locked initially:", is_conversation_started(conv_lock_id)))
 add_message_to_active_history(role = "user", content = "First message")
 print(paste("Locked after user msg:", is_conversation_started(conv_lock_id)))
 
-# Add an assistant message using the proper function
-# This function correctly handles setting the model_locked flag internally
+# Add an assistant message (using the internal function locks the model)
 add_message_to_active_history(role = "assistant", content = "Assistant reply")
 
 # Check status after assistant message (should be TRUE)
 print(paste("Locked after assistant msg:", is_conversation_started(conv_lock_id)))
 
 # Check non-existent conversation
-print(paste("Locked for non-existent:", is_conversation_started("conv_non_existent")))
+print(paste("Locked for non-existent:", is_conversation_started("conv_non_existent"))) # FALSE
 
 # Clean up
-delete_conversation(conv_lock_id)
 reset_history_manager()
 }
