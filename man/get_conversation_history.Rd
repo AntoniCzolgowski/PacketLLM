@@ -2,43 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_history}
 \alias{get_conversation_history}
-\title{Gets the chat history for the conversation with the given ID}
+\title{Get conversation history by ID}
 \usage{
 get_conversation_history(id)
 }
 \arguments{
-\item{id}{Character string. The ID of the conversation.}
+\item{id}{Conversation ID.}
 }
 \value{
-List or \code{NULL}. A list containing the message history (each element is a
-list with \code{role} and \code{content}) for the conversation specified by \code{id}.
-Returns \code{NULL} if the conversation does not exist. Returns an empty list
-(\code{list()}) if the conversation exists but has no history yet.
+List or NULL.
 }
 \description{
-Retrieves the list of messages associated with a specific conversation ID.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_gethist_id <- create_new_conversation(activate = TRUE)
-
-# Get history for new conversation
-print("Initial history by ID:")
-print(get_conversation_history(conv_gethist_id)) # list()
-
-# Add messages using the exported function
-add_message_to_active_history("user", "Hi there")
-add_message_to_active_history("assistant", "Hello")
-
-# Get history again
-print("History after messages:")
-print(get_conversation_history(conv_gethist_id))
-
-# Get history for non-existent ID
-print("History for non-existent:")
-print(get_conversation_history("bad_id")) # NULL
-
-# Clean up
-reset_history_manager()
+Get conversation history by ID
 }

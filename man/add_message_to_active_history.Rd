@@ -2,64 +2,18 @@
 % Please edit documentation in R/history_menager.R
 \name{add_message_to_active_history}
 \alias{add_message_to_active_history}
-\title{Adds a message to the active conversation's history}
+\title{Add a message to the active conversation}
 \usage{
 add_message_to_active_history(role, content)
 }
 \arguments{
-\item{role}{Character string. The role of the message author, must be one of
-"user", "assistant", or "system".}
+\item{role}{'user'|'assistant'|'system'}
 
-\item{content}{Character string. The content of the message.}
+\item{content}{Message content}
 }
 \value{
-A list indicating the result of the operation. Possible structures:
-- \code{list(type = "title_set", new_title = "...")}: If this was the first
-user message and the title was automatically set.
-- \code{list(type = "assistant_locked_model")}: If this was the first assistant
-message, causing the model to be locked.
-- \code{list(type = "message_added")}: If a message was added without
-triggering title setting or model locking.
-- \code{list(type = "error", message = "...")}: If an error occurred (e.g.,
-no active conversation, invalid role, conversation vanished).
+Result list (type + extra fields) or error list.
 }
 \description{
-Appends a message with the specified role and content to the history list
-of the currently active conversation. Handles automatic title generation on
-the first user message and locks the conversation model upon adding the
-first assistant message.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_add_id <- create_new_conversation(activate = TRUE, title = "Initial Title")
-
-# Add first user message (should set title)
-result1 <- add_message_to_active_history(role = "user", content = "This is the very first post.")
-print("Result after first user message:")
-print(result1)
-print(paste("New Title:", get_conversation_title(conv_add_id)))
-
-# Add another user message (should just add message)
-result2 <- add_message_to_active_history(role = "user", content = "Another question.")
-print("Result after second user message:")
-print(result2)
-
-# Add first assistant message (should lock model)
-result3 <- add_message_to_active_history(role = "assistant", content = "Here is the answer.")
-print("Result after first assistant message:")
-print(result3)
-print(paste("Is model locked?", is_conversation_started(conv_add_id)))
-
-# Add system message (just adds message)
-result4 <- add_message_to_active_history(role = "system", content = "System notification.")
-print("Result after system message:")
-print(result4)
-
-# Check final history
-print("Final history:")
-print(get_conversation_history(conv_add_id))
-
-# Clean up
-reset_history_manager()
+Locks the model on the first assistant message. Sets title on the first user message.
 }

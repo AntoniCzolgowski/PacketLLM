@@ -2,39 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_active_conversation}
 \alias{get_active_conversation}
-\title{Gets the full object of the active conversation}
+\title{Get active conversation object}
 \usage{
 get_active_conversation()
 }
 \value{
-List or \code{NULL}. A list containing all data for the active conversation
-(id, title, history, attachments, settings, etc.), or \code{NULL} if no
-conversation is currently active.
+List or NULL.
 }
 \description{
-Retrieves the complete data structure (a list) associated with the currently
-active conversation.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_get_obj_id <- create_new_conversation(activate = TRUE, title = "Test Object")
-add_message_to_active_history("user", "Message for object test")
-
-# Get the active conversation object
-active_obj <- get_active_conversation()
-if (!is.null(active_obj)) {
-  print("Active conversation object:")
-  print(str(active_obj)) # Use str() for concise structure view
-} else {
-  print("No active conversation found.")
-}
-
-# Deactivate and try again
-set_active_conversation(NULL)
-active_obj_null <- get_active_conversation()
-print(paste("Active object when none active:", is.null(active_obj_null))) # TRUE
-
-# Clean up
-reset_history_manager()
+Get active conversation object
 }

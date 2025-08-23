@@ -2,46 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{set_active_conversation}
 \alias{set_active_conversation}
-\title{Sets the active conversation}
+\title{Set the active conversation}
 \usage{
 set_active_conversation(id)
 }
 \arguments{
-\item{id}{Character string (the ID of the conversation to activate) or \code{NULL}.}
+\item{id}{Conversation ID or NULL.}
 }
 \value{
-Invisible \code{NULL} (\code{invisible(NULL)}). This function is called for its
-side effect of changing the active conversation state. It produces a
-warning if attempting to activate a non-existent conversation ID.
+Invisible NULL.
 }
 \description{
-Designates a conversation, specified by its ID, as the currently active one.
-Setting \code{id} to \code{NULL} deactivates any currently active conversation.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_set_id1 <- create_new_conversation(activate = FALSE, title = "Conv 1")
-conv_set_id2 <- create_new_conversation(activate = FALSE, title = "Conv 2")
-print(paste("Initial active ID:", get_active_conversation_id())) # NULL
-
-# Set conv1 as active
-set_active_conversation(conv_set_id1)
-print(paste("Active ID after set 1:", get_active_conversation_id())) # conv_set_id1
-
-# Set conv2 as active
-set_active_conversation(conv_set_id2)
-print(paste("Active ID after set 2:", get_active_conversation_id())) # conv_set_id2
-
-# Set non-existent ID (should warn and not change active ID)
-set_active_conversation("conv_non_existent")
-active_after_invalid_set <- get_active_conversation_id() # Still conv_set_id2
-print(paste("Active ID after set non-existent:", active_after_invalid_set))
-
-# Deactivate by setting to NULL
-set_active_conversation(NULL)
-print(paste("Active ID after set NULL:", get_active_conversation_id())) # NULL
-
-# Clean up
-reset_history_manager()
+Set the active conversation
 }

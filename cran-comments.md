@@ -1,15 +1,11 @@
-## Resubmission
+## submission
 
-This is a resubmission of PacketLLM (version 0.1.0). Thank you for the previous review and feedback.
+This is a submission of PacketLLM download version (version 0.1.1). Thank you for the review.
 
-All points raised in the previous review email have been addressed as follows:
-
-*   Package names ('RStudio', 'OpenAI', 'httr', model names, etc.), software names, and API names are now consistently enclosed in single quotes within the Title and Description fields of the DESCRIPTION file. Package names are case-sensitive.
-*   A web reference to the API documentation (<https://platform.openai.com/docs/api-reference>) has been added to the Description field as requested, using the specified format (`<https:...>`). Please note that this URL might fail automated checks (returning a 403 Forbidden error, as seen in the win-builder check results below), likely due to server-side restrictions by OpenAI on automated traffic. The link is correct and accessible via a standard web browser.
-*   Unnecessary spaces/line breaks in the Description field have been reviewed and removed.
-*   All exported functions now include a `\value` tag in their Roxygen documentation, explaining the structure and meaning of the returned object, or explicitly stating if no value is returned (including the specifically mentioned `run_llm_chat_app`).
-*   Commented-out code within `@examples` blocks has been removed. Examples requiring external resources (API keys, internet access, specific packages like `pdftools`), lengthy examples, or those designed to show errors are now wrapped in `\dontrun{}` as appropriate (including those mentioned for `check_api_key.Rd`, `initialize_history_manager.Rd`, and `read_file_content.Rd`).
-*   The use of `print()` and `cat()` for console output has been significantly reduced, particularly in non-interactive functions like `call_openai_chat` (originally mentioned as `R/openai_api.R`). Output is now primarily handled via `message()`, `warning()`, `stop()`, or conditional messages using `if (is_verbose())` checks, following CRAN guidelines.
+### What's changed since 0.1.0
+* Models: restrict built-in presets to the OpenAI GPT-5 family (`'gpt-5'`, `'gpt-5-mini'`, `'gpt-5-nano'`); remove previous presets.
+* API compatibility: for GPT-5 models, omit unsupported `temperature` parameter to avoid 400 “unsupported_value”.
+* UI: improve window fill; default chat area uses 65vh to better utilize space.
 
 ## R CMD check results
 

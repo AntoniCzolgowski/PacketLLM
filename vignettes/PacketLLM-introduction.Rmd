@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Welcome to **PacketLLM**! This package provides a seamless way to interact with OpenAI's Large Language Models (LLMs) such as GPT-4o directly within your RStudio environment. It runs as an RStudio Gadget, offering a familiar chat interface without the need to switch between applications.
+Welcome to **PacketLLM**! This package provides a seamless way to interact with OpenAI's Large Language Models (LLMs) such as GPT-5 directly within your RStudio environment. It runs as an RStudio Gadget, offering a familiar chat interface without the need to switch between applications.
 
 With PacketLLM, you can:
 - Generate code and explanations.
@@ -72,6 +72,9 @@ Install PacketLLM from GitHub:
 # Uncomment the next line if you need the remotes package
 # install.packages("remotes")
 remotes::install_github("AntoniCzolgowski/PacketLLM")
+
+# From CRAN
+install.packages(PacketLLM)
 ```
 
 ## Launching the Chat Gadget
@@ -90,7 +93,7 @@ This command should be executed in an interactive RStudio session.
 The PacketLLM interface consists of:
 
 - **Top Navigation Bar:**
-  - *Settings:* Configure the model, temperature, and system message (before sending the first message).
+  - *Settings:* Configure the model, and system message (before sending the first message).
   - *New Conversation:* Create a new chat tab.
   - *Close App (X):* Exit the PacketLLM gadget.
 

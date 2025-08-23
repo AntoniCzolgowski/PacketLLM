@@ -2,44 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_active_conversation_attachments}
 \alias{get_active_conversation_attachments}
-\title{Gets the list of attachments for the active conversation}
+\title{Get attachments for active conversation}
 \usage{
 get_active_conversation_attachments()
 }
 \value{
-List. A list where each element is a list containing \code{name} (character)
-and \code{content} (character) for an attachment associated with the currently
-active conversation. Returns an empty list (\code{list()}) if no conversation
-is active or if the active conversation has no attachments.
+List (possibly empty).
 }
 \description{
-Retrieves the list of attachments (files provided as context) associated with
-the currently active conversation.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_getactiveattach_id <- create_new_conversation(activate = TRUE)
-
-# Get attachments when none added
-print("Attachments initially:")
-print(get_active_conversation_attachments()) # list()
-
-# Add some attachments
-add_attachment_to_active_conversation("data.csv", "col1,col2\n1,2")
-add_attachment_to_active_conversation("notes.txt", "Reminder")
-
-# Get attachments again
-print("Attachments after adding:")
-attachments_list <- get_active_conversation_attachments()
-print(attachments_list)
-print(paste("Number of attachments:", length(attachments_list))) # 2
-
-# Deactivate and check (should be empty list)
-set_active_conversation(NULL)
-print("Attachments when none active:")
-print(get_active_conversation_attachments()) # list()
-
-# Clean up
-reset_history_manager()
+Get attachments for active conversation
 }

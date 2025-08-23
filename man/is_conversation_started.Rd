@@ -2,44 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{is_conversation_started}
 \alias{is_conversation_started}
-\title{Checks if the conversation has started (model locked)}
+\title{Has the conversation started (model locked)?}
 \usage{
 is_conversation_started(id)
 }
 \arguments{
-\item{id}{Character string. The ID of the conversation to check.}
+\item{id}{Conversation ID.}
 }
 \value{
-Logical. \code{TRUE} if the model for the conversation is locked,
-\code{FALSE} otherwise or if the conversation with the specified \code{id}
-does not exist.
+Logical.
 }
 \description{
-Determines if the model for a given conversation is locked, which typically
-occurs after the first assistant message has been added. Once locked, the
-model for the conversation usually cannot be changed.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_lock_id <- create_new_conversation(activate = TRUE)
-
-# Check status of a new conversation (should be FALSE)
-print(paste("Locked initially:", is_conversation_started(conv_lock_id)))
-
-# Add a user message (does NOT lock the model)
-add_message_to_active_history(role = "user", content = "First message")
-print(paste("Locked after user msg:", is_conversation_started(conv_lock_id)))
-
-# Add an assistant message (using the internal function locks the model)
-add_message_to_active_history(role = "assistant", content = "Assistant reply")
-
-# Check status after assistant message (should be TRUE)
-print(paste("Locked after assistant msg:", is_conversation_started(conv_lock_id)))
-
-# Check non-existent conversation
-print(paste("Locked for non-existent:", is_conversation_started("conv_non_existent"))) # FALSE
-
-# Clean up
-reset_history_manager()
+Has the conversation started (model locked)?
 }

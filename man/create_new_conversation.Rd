@@ -2,7 +2,7 @@
 % Please edit documentation in R/history_menager.R
 \name{create_new_conversation}
 \alias{create_new_conversation}
-\title{Creates a new conversation}
+\title{Create a new conversation}
 \usage{
 create_new_conversation(
   activate = FALSE,
@@ -11,43 +11,15 @@ create_new_conversation(
 )
 }
 \arguments{
-\item{activate}{Logical. Should the new conversation be set as active immediately? (Default: \code{FALSE}).}
+\item{activate}{Logical. Activate immediately?}
 
-\item{add_initial_settings}{Logical. Should default settings (model, temperature,
-system message) be added to the conversation structure? (Default: \code{TRUE}).}
+\item{add_initial_settings}{Logical. Add default model and system message?}
 
-\item{title}{Character string or \code{NULL}. An initial title for the conversation.
-If \code{NULL} (default), a title is generated based on the creation time.}
+\item{title}{Optional title; if NULL, a time-based title is used.}
 }
 \value{
-Character string. The unique ID assigned to the newly created conversation.
+Character: conversation ID.
 }
 \description{
-Adds a new, empty conversation structure to the internal history store.
-Optionally sets the new conversation as the active one.
-}
-\examples{
-# Ensure manager is initialized (or reset)
-reset_history_manager()
-initialize_history_manager() # Creates one initial conversation
-initial_active_id <- get_active_conversation_id()
-
-# Create a new conversation without activating it
-conv1_id <- create_new_conversation(activate = FALSE, title = "My First Topic")
-print(paste("Created conv1 ID:", conv1_id))
-current_active_id <- get_active_conversation_id() # Should still be the initial one
-print(paste("Active ID:", current_active_id))
-
-# Create another conversation and activate it immediately
-conv2_id <- create_new_conversation(activate = TRUE, title = "My Second Topic")
-print(paste("Created conv2 ID:", conv2_id))
-current_active_id_2 <- get_active_conversation_id() # Should be conv2_id now
-print(paste("Active ID:", current_active_id_2))
-
-# Check total conversations
-total_convs <- length(get_all_conversation_ids())
-print(paste("Total conversations:", total_convs))
-
-# Clean up by resetting (which deletes all)
-reset_history_manager()
+Create a new conversation
 }

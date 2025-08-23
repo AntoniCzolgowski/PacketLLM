@@ -1,3 +1,9 @@
+# PacketLLM 0.1.1
+
+* Models: restrict built-in presets to the OpenAI GPT-5 family (`gpt-5`, `gpt-5-mini`, `gpt-5-nano`); remove previous presets (`gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `o1`, `o3-mini`).
+* API compatibility: avoid 400 “unsupported_value” by omitting `temperature` for GPT-5 models (treated as simplified in this release).
+* UI/Settings: remove the temperature control and related logic; all conversations use the model’s default temperature. Documentation and tests updated accordingly.
+
 # PacketLLM 0.1.0
 
 *   **Initial Release to CRAN.**

@@ -2,44 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_attachments}
 \alias{get_conversation_attachments}
-\title{Gets the list of attachments for the conversation with the given ID}
+\title{Get attachments by ID}
 \usage{
 get_conversation_attachments(id)
 }
 \arguments{
-\item{id}{Character string. The ID of the conversation.}
+\item{id}{Conversation ID.}
 }
 \value{
-List or \code{NULL}. A list where each element is itself a list containing
-\code{name} (character) and \code{content} (character) for an attachment
-associated with the conversation specified by \code{id}. Returns \code{NULL} if
-the conversation does not exist. Returns an empty list (\code{list()}) if
-the conversation exists but has no attachments.
+List or NULL.
 }
 \description{
-Retrieves the list of attachments (files provided as context) associated with
-a specific conversation ID.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_attach_id <- create_new_conversation(activate = TRUE)
-
-# Get attachments for new conversation (empty list)
-print("Initial attachments by ID:")
-print(get_conversation_attachments(conv_attach_id)) # list()
-
-# Add an attachment using the exported function
-add_attachment_to_active_conversation("file1.txt", "File content here")
-
-# Get attachments again
-print("Attachments after adding:")
-print(get_conversation_attachments(conv_attach_id))
-
-# Get attachments for non-existent ID
-print("Attachments for non-existent:")
-print(get_conversation_attachments("bad_id")) # NULL
-
-# Clean up
-reset_history_manager()
+Get attachments by ID
 }

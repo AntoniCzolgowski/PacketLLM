@@ -2,50 +2,18 @@
 % Please edit documentation in R/history_menager.R
 \name{set_conversation_system_message}
 \alias{set_conversation_system_message}
-\title{Sets the system message for the conversation with the given ID}
+\title{Set system message for conversation}
 \usage{
 set_conversation_system_message(id, message)
 }
 \arguments{
-\item{id}{Character string. The ID of the conversation.}
+\item{id}{Conversation ID.}
 
-\item{message}{Character string. The new system message content (must be a single string).}
+\item{message}{Single string system message.}
 }
 \value{
-Logical. \code{TRUE} if the system message was successfully updated. \code{FALSE}
-if the conversation does not exist or if the provided \code{message} is not a
-single character string.
+Logical.
 }
 \description{
-Updates the system message (instructions provided to the language model)
-for a specific conversation.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_sys_id <- create_new_conversation()
-initial_sys_msg <- get_conversation_data(conv_sys_id)$system_message
-print(paste("Initial system message:", initial_sys_msg)) # Default message
-
-# Set a valid system message
-new_message <- "You are an expert R programmer. Respond only with code."
-result_valid <- set_conversation_system_message(conv_sys_id, new_message)
-print(paste("Valid set successful:", result_valid)) # TRUE
-msg_after_set <- get_conversation_data(conv_sys_id)$system_message
-print(paste("System message after set:", msg_after_set))
-
-# Try setting an invalid message (e.g., not a single string)
-result_invalid <- set_conversation_system_message(conv_sys_id, list("not a string"))
-print(paste("Invalid set successful:", result_invalid)) # FALSE
-
-# Try setting an invalid message (vector of strings)
-result_invalid_vec <- set_conversation_system_message(conv_sys_id, c("Line 1", "Line 2"))
-print(paste("Invalid vector set successful:", result_invalid_vec)) # FALSE
-
-# Check message after invalid attempts
-final_msg_after_invalid <- get_conversation_data(conv_sys_id)$system_message # Unchanged
-print(paste("System message after invalid attempts:", final_msg_after_invalid))
-
-# Clean up
-reset_history_manager()
+Set system message for conversation
 }

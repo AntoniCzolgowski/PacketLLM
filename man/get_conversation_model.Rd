@@ -2,34 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_model}
 \alias{get_conversation_model}
-\title{Gets the model name for the conversation with the given ID}
+\title{Get model for conversation}
 \usage{
 get_conversation_model(id)
 }
 \arguments{
-\item{id}{Character string. The ID of the conversation.}
+\item{id}{Conversation ID.}
 }
 \value{
-Character string or \code{NULL}. The name of the OpenAI model assigned to the
-conversation with the specified \code{id}. Returns \code{NULL} if the conversation
-does not exist. Returns a fallback model name if the model field happens
-to be \code{NULL} internally.
+Character or NULL.
 }
 \description{
-Retrieves the name of the language model assigned to a specific conversation.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_model_id <- create_new_conversation() # Uses default model from initialization
-
-# Get the model for the conversation
-model_name <- get_conversation_model(conv_model_id)
-print(paste("Model for conversation:", model_name))
-
-# Check a non-existent conversation
-print(paste("Model for non-existent:", get_conversation_model("bad_id"))) # NULL
-
-# Clean up
-reset_history_manager()
+Get model for conversation
 }

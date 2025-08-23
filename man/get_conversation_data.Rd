@@ -2,39 +2,16 @@
 % Please edit documentation in R/history_menager.R
 \name{get_conversation_data}
 \alias{get_conversation_data}
-\title{Gets the full conversation data object for the given ID}
+\title{Get conversation data by ID}
 \usage{
 get_conversation_data(id)
 }
 \arguments{
-\item{id}{Character string. The ID of the conversation.}
+\item{id}{Conversation ID.}
 }
 \value{
-List or \code{NULL}. A list containing all stored data associated with the
-conversation specified by \code{id}. Returns \code{NULL} if the conversation
-does not exist.
+List or NULL.
 }
 \description{
-Retrieves the complete data structure (a list) associated with a specific
-conversation ID, including its history, attachments, settings, etc.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_getdata_id <- create_new_conversation(title = "Data Test")
-set_conversation_temperature(conv_getdata_id, 0.9)
-
-# Get conversation data by ID
-data_obj <- get_conversation_data(conv_getdata_id)
-if (!is.null(data_obj)) {
-  print("Conversation data object:")
-  print(str(data_obj))
-}
-
-# Get data for non-existent ID
-print("Data for non-existent:")
-print(get_conversation_data("bad_id")) # NULL
-
-# Clean up
-reset_history_manager()
+Get conversation data by ID
 }

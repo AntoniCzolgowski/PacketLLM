@@ -7,46 +7,8 @@
 get_assistant_response()
 }
 \value{
-Character string. Contains the assistant's response text. If an error
-occurs during message preparation or the API call, a descriptive error
-message (starting with "Error:" or "API Error:") is returned instead.
-Returns "Critical Error: No active conversation..." if no conversation is active.
+Character with assistant reply or error message.
 }
 \description{
-Sends the prepared history (including system message and attachments for standard
-models) to the OpenAI API and returns the assistant's response. Handles model-specific
-logic internally.
-}
-\examples{
-\dontrun{
-# This function requires an active conversation with history,
-# the OPENAI_API_KEY environment variable to be set, and internet access.
-
-# Setup: Create, activate, and add a user message
-conv_id_resp <- tryCatch(create_new_conversation(activate = TRUE), error = function(e) NULL)
-if (!is.null(conv_id_resp)) {
-  add_user_message("What day is it today?") # Add a user message first
-
-  # Ensure the API key is set in your environment before running:
-  # Sys.setenv(OPENAI_API_KEY = "your_actual_openai_api_key")
-
-  # Get the response from the assistant
-  # For less console output during standard use, you can set the global option:
-  # options(PacketLLM.verbose = FALSE)
-  assistant_reply <- get_assistant_response()
-  # options(PacketLLM.verbose = TRUE) # Optionally set back for debugging
-
-  # Print the response
-  print(assistant_reply)
-
-  # Verify the assistant's response was added to history (optional)
-  # print(get_active_chat_history())
-
-  # Clean up
-  delete_conversation(conv_id_resp)
-  set_active_conversation(NULL)
-} else {
- print("Skipping example as conversation setup failed.")
-}
-}
+Prepares messages and calls the API. Adds the reply to history.
 }

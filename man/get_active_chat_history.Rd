@@ -2,41 +2,13 @@
 % Please edit documentation in R/history_menager.R
 \name{get_active_chat_history}
 \alias{get_active_chat_history}
-\title{Gets the chat history for the active conversation}
+\title{Get active chat history}
 \usage{
 get_active_chat_history()
 }
 \value{
-List. A list containing the message history (each element is a list
-with \code{role} and \code{content}) for the currently active conversation.
-Returns an empty list (\code{list()}) if no conversation is active or if
-the active conversation has no history yet.
+List of messages (possibly empty).
 }
 \description{
-Retrieves the list of messages associated with the currently active conversation.
-}
-\examples{
-# Setup
-reset_history_manager()
-conv_hist_id <- create_new_conversation(activate = TRUE)
-
-# Get history when empty
-print("Initial history:")
-print(get_active_chat_history()) # list()
-
-# Add messages
-add_message_to_active_history("user", "Question 1")
-add_message_to_active_history("assistant", "Answer 1")
-
-# Get history after adding messages
-print("History after messages:")
-print(get_active_chat_history())
-
-# Deactivate and check (should be empty list)
-set_active_conversation(NULL)
-print("History when none active:")
-print(get_active_chat_history()) # list()
-
-# Clean up
-reset_history_manager()
+Get active chat history
 }

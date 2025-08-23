@@ -7,30 +7,13 @@
 check_api_key()
 }
 \value{
-Invisible \code{TRUE} (\code{invisible(TRUE)}) if the API key is set.
-Otherwise, stops execution with an error.
+Invisible TRUE if set.
 }
 \description{
-This function checks if the API key assigned to the \code{OPENAI_API_KEY} variable
-exists in the environment variables (e.g., in the .Renviron file).
-If the key is not set, the function will raise an error and stop execution.
-If the key is set, it returns TRUE invisibly.
+Verifies that OPENAI_API_KEY is set. Stops if missing.
 }
 \examples{
 \dontrun{
-  # This function requires the OPENAI_API_KEY environment variable to be set.
-  # You can check if the key is set using Sys.getenv("OPENAI_API_KEY").
-  # If the key is set, calling check_api_key() will return TRUE invisibly.
-  # If the key is NOT set, it will stop execution with an error message.
-
-  # Example demonstrating how to handle the potential error if the key is missing:
-  result <- tryCatch({
-    check_api_key()
-    "API key found." # Message if check passes
-  }, error = function(e) {
-    # Handle the error if the key is missing
-    paste("Error:", e$message)
-  })
-  print(result)
+  check_api_key()
 }
 }

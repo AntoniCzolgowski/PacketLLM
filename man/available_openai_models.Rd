@@ -5,7 +5,7 @@
 \alias{available_openai_models}
 \title{List of available OpenAI models for selection in the UI}
 \format{
-An object of class \code{character} of length 5.
+An object of class \code{character} of length 3.
 }
 \usage{
 available_openai_models

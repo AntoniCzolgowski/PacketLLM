@@ -3,9 +3,8 @@
 
 PacketLLM: Interactive OpenAI Chat within RStudio
 
-PacketLLM integrates OpenAI’s powerful language models (such as GPT-4o
-and GPT-4.1) directly into your RStudio workflow via an interactive
-RStudio Gadget interface.
+PacketLLM integrates OpenAI’s powerful GPT-5 language models directly
+into your RStudio workflow via an interactive RStudio Gadget interface.
 
 Stop switching between windows! Leverage state-of-the-art AI to
 streamline tasks such as: - Generating R code snippets - Explaining
@@ -35,10 +34,8 @@ documents
 
 Per-Conversation Settings:  
 Tailor the AI’s behavior for each chat by adjusting: - The specific
-OpenAI model (e.g., gpt-4o, GPT-4.1, gpt-4o-mini). - The temperature
-setting to control response creativity (for supported models). - A
-custom system message to define the AI’s role or instructions (for
-supported models).
+OpenAI model (e.g., gpt-5, gpt-5 mini, gpt-5 nano). - A custom system
+message to define the AI’s role or instructions.
 
 Asynchronous Operations:  
 API calls are handled asynchronously, ensuring the R console remains
