@@ -2,7 +2,7 @@
 % Please edit documentation in R/llm_chat_app.R
 \name{run_llm_chat_app}
 \alias{run_llm_chat_app}
-\title{Run the LLM Chat Application in RStudio Window}
+\title{Run the PacketLLM gadget}
 \usage{
 run_llm_chat_app()
 }
@@ -10,9 +10,9 @@ run_llm_chat_app()
 Value passed to shiny::stopApp() (typically NULL).
 }
 \description{
-Launches the Shiny application as a Gadget in the RStudio Viewer pane
-(or a separate window). Interacts with LLM models, managing conversations,
-attachments, and settings, without blocking the R console when opened in a new window.
+Launches PacketLLM as an RStudio/Shiny gadget. The gadget can use RStudio
+editor context when available, while still running outside RStudio with
+reduced functionality.
 }
 \examples{
 \dontrun{

@@ -1,62 +1,68 @@
 # gadget_ui_components.R
 
-#' Creates the UI for the content of a single chat tab
-#'
-#' Generates the HTML structure for the history area and the bottom input bar.
-#' Changed the uiOutput ID for the attachment list to `staged_files_list_output`.
-#'
-#' @param conv_id Unique identifier for the conversation (used for namespacing).
-#'
-#' @return A tagList object containing the UI for the tab.
-#' @noRd
-#' @import shiny
 create_tab_content_ui <- function(conv_id) {
-  ns <- NS(conv_id) # Create namespace
+  ns <- NS(conv_id)
 
   tagList(
-    # Chat history container
     tags$div(
-      class = "chat-history-container-class",
-      uiOutput(ns("chat_history_output")) # Output rendered by render_chat_history_ui
-    ),
-
-    # Input row (Flexbox)
-    tags$div(
-      class = "input-action-row",
-
-      # 1. Add File button (+)
-      tags$button(
-        id = ns("add_file_btn"),
-        type = "button",
-        class = "btn btn-default add-file-btn-class",
-        `data-conv-id` = conv_id,
-        "+"
-      ),
-
-      # 2. Container for attachment list (uiOutput ID)
+      class = "packet-context-row",
       tags$div(
-        id = ns("staged-attachments-list-container"), # Container ID can remain
-        class = "attachments-container",
-        # UI output ID to match the server
-        uiOutput(ns("staged_files_list_output")) # Output rendered by render_staged_attachments_list_ui
+        class = "packet-context-controls",
+        selectInput(
+          ns("context_mode"),
+          label = NULL,
+          choices = context_mode_choices(),
+          selected = "auto",
+          width = "132px"
+        ),
+        tags$button(
+          id = ns("refresh_context_btn"),
+          type = "button",
+          class = "packet-icon-btn packet-refresh-context",
+          title = "Refresh RStudio context",
+          `data-conv-id` = conv_id,
+          "Refresh"
+        )
       ),
-
-      # 3. Message input field (placeholder)
-      textAreaInput(
-        ns("user_message_input"),
-        label = NULL,
-        placeholder = "Enter message...", # placeholder
-        width = "100%"
+      tags$div(class = "packet-context-status", uiOutput(ns("context_status_output")))
+    ),
+    tags$div(
+      class = "packet-chat-history",
+      uiOutput(ns("chat_history_output"))
+    ),
+    tags$div(
+      class = "packet-composer",
+      tags$div(
+        class = "packet-attachments-row",
+        tags$button(
+          id = ns("add_file_btn"),
+          type = "button",
+          class = "packet-secondary-btn add-file-btn-class",
+          `data-conv-id` = conv_id,
+          "Attach"
+        ),
+        tags$div(
+          id = ns("staged-attachments-list-container"),
+          class = "packet-attachments",
+          uiOutput(ns("staged_files_list_output"))
+        )
       ),
-
-      # 4. Send button (text)
-      tags$button(
-        id = ns("send_query_btn"),
-        type = "button",
-        class = "btn btn-primary send-btn-class",
-        `data-conv-id` = conv_id,
-        "Send" # button text
+      tags$div(
+        class = "packet-input-row",
+        textAreaInput(
+          ns("user_message_input"),
+          label = NULL,
+          placeholder = "Ask PacketLLM...",
+          width = "100%"
+        ),
+        tags$button(
+          id = ns("send_query_btn"),
+          type = "button",
+          class = "packet-primary-btn send-btn-class",
+          `data-conv-id` = conv_id,
+          "Send"
+        )
       )
-    ) # End tags$div.input-action-row
-  ) # End tagList
+    )
+  )
 }

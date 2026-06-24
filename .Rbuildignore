@@ -2,6 +2,8 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
+^README\.html$
+^AGENTS\.md$
 ^doc$
 ^Meta$
 ^CRAN-SUBMISSION$

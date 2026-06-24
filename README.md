@@ -1,51 +1,30 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-PacketLLM: Interactive OpenAI Chat within RStudio
+# PacketLLM
 
-PacketLLM integrates OpenAI’s powerful GPT-5 language models directly
-into your RStudio workflow via an interactive RStudio Gadget interface.
+PacketLLM is an AI assistant gadget for RStudio. It helps with code
+explanation, code generation, documentation, review, and file-aware
+development tasks without turning the workflow into a separate browser
+app.
 
-Stop switching between windows! Leverage state-of-the-art AI to
-streamline tasks such as: - Generating R code snippets - Explaining
-complex code or concepts - Debugging assistance - Summarizing
-documents - Analyzing text content from files - Brainstorming ideas
+## Highlights
 
-…all without leaving your familiar RStudio environment.
+- **RStudio-aware context**: uses selected code, the active source file,
+  package metadata, or attached files depending on the selected context
+  scope.
+- **Responsive gadget UI**: works in the Viewer pane and in a popped-out
+  browser window.
+- **Code-focused responses**: renders explanations, code blocks, and
+  proposed changes in a clean developer-oriented layout.
+- **Safe editor actions**: copy is always available; insert and replace
+  are enabled only when PacketLLM has a verified RStudio editor target.
+- **Model presets**: choose Best, Balanced, or Fast while advanced
+  settings reveal the exact model ID.
+- **Assistant behavior**: use presets such as Default, Concise,
+  Code-focused, Reviewer, or Custom.
 
-Key Features
-
-Seamless RStudio Integration:  
-Runs as a responsive Shiny Gadget within RStudio’s Viewer pane (can be
-popped out into a separate window).
-
-Interactive Chat:  
-Engage in natural language conversations with selected OpenAI models.
-
-Multiple Conversations:  
-Manage several distinct chat sessions simultaneously using a familiar
-tabbed interface.
-
-Contextual File Uploads:  
-Provide context to the LLM by uploading local files directly into a
-conversation.  
-Supported formats: - .R / .R scripts - .pdf documents - .docx Word
-documents
-
-Per-Conversation Settings:  
-Tailor the AI’s behavior for each chat by adjusting: - The specific
-OpenAI model (e.g., gpt-5, gpt-5 mini, gpt-5 nano). - A custom system
-message to define the AI’s role or instructions.
-
-Asynchronous Operations:  
-API calls are handled asynchronously, ensuring the R console remains
-responsive while waiting for the model’s reply.
-
-Model Flexibility:  
-Easily switch between available OpenAI chat models before starting a new
-conversation.
-
-Installation
+## Installation
 
 You can install the development version of PacketLLM from GitHub with:
 
@@ -54,18 +33,11 @@ You can install the development version of PacketLLM from GitHub with:
 remotes::install_github("AntoniCzolgowski/PacketLLM")
 ```
 
-Configuration: OpenAI API Key (Crucial!)
+## Configuration
 
-PacketLLM requires an OpenAI API key to communicate with the language
-models.
-
-Obtain an API Key:  
-If you don’t have one, sign up and get an API key from OpenAI.
-
-Set the Environment Variable:  
-The recommended and most secure way to provide the key is by setting the
-OPENAI_API_KEY environment variable. PacketLLM will automatically detect
-and use it.
+PacketLLM currently uses an OpenAI-compatible backend and reads the API
+key from the `OPENAI_API_KEY` environment variable. Do not hardcode keys
+in scripts or commit them to a repository.
 
 Add the following line to your user-level or project-level .Renviron
 file:
@@ -74,20 +46,19 @@ file:
 OPENAI_API_KEY='your_secret_api_key_here'
 ```
 
-Use `usethis::edit_r_environ()` to easily open your .Renviron file.
+Use `usethis::edit_r_environ()` to open your user `.Renviron`, then
+restart R.
 
-Important: After editing .Renviron, restart your R session for the
-changes to take effect. Never hardcode your API key directly into
-scripts or share it publicly.
+## Usage
 
-Basic Usage
-
-Once installed and configured with your API key, simply load the library
-and run the main function in your RStudio console:
+Launch PacketLLM from the RStudio Addins menu, or run:
 
 ``` r
 library(PacketLLM)
-
-# Launch the PacketLLM Chat Gadget
 run_llm_chat_app()
 ```
+
+In RStudio, PacketLLM can detect the current selection, active source
+file, and project metadata. It can copy generated code, insert code at
+the captured editor target, or replace a captured selection after
+verifying that the target still matches.

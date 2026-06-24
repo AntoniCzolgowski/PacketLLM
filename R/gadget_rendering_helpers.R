@@ -1,17 +1,7 @@
 # gadget_rendering_helpers.R
 
-
-#' Renders the UI for the chat history
-#'
-#' Function unchanged - will correctly display the user message with the added "Attached:" section.
-#'
-#' @param history List of messages (each is a list with `role` and `content`).
-#' @return UI rendering object (result of `renderUI`).
-#' @noRd
-#' @import shiny
-render_chat_history_ui <- function(history) {
+render_chat_history_ui <- function(history, conv_id = NULL, context = NULL) {
   renderUI({
-    # Skip the first system message if it exists
     history_to_display <- if (length(history) > 0 && !is.null(history[[1]]$role) && history[[1]]$role == "system") {
       tail(history, -1)
     } else {
@@ -19,82 +9,219 @@ render_chat_history_ui <- function(history) {
     }
 
     if (is.null(history_to_display) || length(history_to_display) == 0) {
-
-      return(tags$p(tags$em("Start the conversation.")))
+      return(tags$div(class = "packet-empty-state", "Start the conversation."))
     }
 
-    formatted_messages <- lapply(history_to_display, function(msg) {
-      # placeholder
-      content_display <- msg$content %||% "[NO CONTENT]"
-      role_display <- msg$role %||% "unknown"
-
-      # Styling system errors (checking for English "Error" prefix now)
-
-      if (role_display == "system" && grepl("^(Error|Blad)(:| API:| execution error:| processing| wykonania Future:| przetwarzania)", content_display, ignore.case = TRUE)) {
-        tags$div(
-          style = "margin-bottom: 8px; padding: 8px; border-radius: 8px; background-color: #ffebee; color: #c62828; border: 1px dashed #ef9a9a; width: 90%; margin-right: 10%; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);",
-          # label
-          tags$strong("System Information:"),
-          tags$div(style = "white-space: pre-wrap; word-wrap: break-word;", content_display)
-        )
-      } else if (role_display == "system") {
-        # Hide other system messages
-        NULL
-      } else {
-        # User and assistant messages
-        tags$div(
-          style = paste(
-            "margin-bottom: 8px; padding: 8px; border-radius: 8px;",
-            if (role_display == "user") "background-color: #e1f5fe; text-align: left; margin-left: 10%; width: 90%; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);"
-            else if (role_display == "assistant") "background-color: #f0f4c3; margin-right: 10%; width: 90%; box-shadow: 1px 1px 3px rgba(0,0,0,0.1);"
-            else "background-color: #eeeeee; font-style: italic; color: #555; border: 1px dashed #ccc;" # Style for 'unknown'
-          ),
-          # labels
-          tags$strong(ifelse(role_display == "user", "You:", "Assistant:")),
-          # white-space: pre-wrap; will handle new lines added in the "Attached:" section
-          tags$div(style = "white-space: pre-wrap; word-wrap: break-word;", HTML(content_display))
-        )
-      }
-    })
-    formatted_messages <- Filter(Negate(is.null), formatted_messages)
-    tagList(formatted_messages, tags$div(style="height: 10px;")) # Extra margin at the bottom
+    tagList(lapply(history_to_display, function(msg) {
+      render_message_card(msg, conv_id = conv_id, context = context)
+    }))
   })
 }
 
+render_message_card <- function(msg, conv_id = NULL, context = NULL) {
+  content_display <- msg$content %||% "[NO CONTENT]"
+  role_display <- msg$role %||% "unknown"
 
-#' Renders the UI for the list of files in the STAGING area (before sending)
-#'
-#' Function name and logic changed to accept a vector of filenames.
-#' Displays "No files" when the list is empty.
-#'
-#' @param staged_files Character vector containing the names of staged files.
-#' @return UI rendering object (result of `renderUI`).
-#' @noRd
-#' @import shiny
+  if (identical(role_display, "system") &&
+      grepl("^(Error|Blad|Future execution error|API Error)", content_display, ignore.case = TRUE)) {
+    return(tags$div(
+      class = "packet-message packet-message-system",
+      tags$div(class = "packet-message-label", "System"),
+      tags$div(class = "packet-message-body packet-prewrap", content_display)
+    ))
+  }
+  if (identical(role_display, "system")) {
+    return(NULL)
+  }
+
+  message_class <- if (identical(role_display, "user")) "packet-message-user" else "packet-message-assistant"
+  label <- if (identical(role_display, "user")) "You" else "PacketLLM"
+  blocks <- if (identical(role_display, "assistant")) split_response_blocks(content_display) else list(list(type = "text", content = content_display))
+  action_state <- editor_action_state(context)
+
+  tags$div(
+    class = paste("packet-message", message_class),
+    tags$div(class = "packet-message-label", label),
+    tags$div(
+      class = "packet-message-body",
+      tagList(lapply(blocks, function(block) {
+        if (identical(block$type, "code") && identical(tolower(block$lang %||% ""), "packetllm-change")) {
+          render_change_card(block$content, conv_id, action_state)
+        } else if (identical(block$type, "code")) {
+          render_code_card(block$content, block$lang, conv_id, action_state)
+        } else {
+          tags$div(class = "packet-text-block packet-prewrap", block$content)
+        }
+      })),
+      if (identical(role_display, "assistant")) {
+        tags$div(
+          class = "packet-response-actions",
+          packet_action_button("Copy", "copy", content_display, conv_id, enabled = TRUE)
+        )
+      }
+    )
+  )
+}
+
+split_response_blocks <- function(text) {
+  lines <- strsplit(text %||% "", "\n", fixed = TRUE)[[1]]
+  if (length(lines) == 0) {
+    return(list(list(type = "text", content = "")))
+  }
+
+  blocks <- list()
+  current <- character(0)
+  in_code <- FALSE
+  code_lang <- ""
+  code_lines <- character(0)
+
+  flush_text <- function() {
+    if (length(current) > 0) {
+      blocks[[length(blocks) + 1]] <<- list(type = "text", content = paste(current, collapse = "\n"))
+      current <<- character(0)
+    }
+  }
+
+  for (line in lines) {
+    if (!in_code && grepl("^```", line)) {
+      flush_text()
+      in_code <- TRUE
+      code_lang <- trimws(sub("^```", "", line))
+      code_lines <- character(0)
+    } else if (in_code && grepl("^```\\s*$", line)) {
+      blocks[[length(blocks) + 1]] <- list(type = "code", lang = code_lang, content = paste(code_lines, collapse = "\n"))
+      in_code <- FALSE
+      code_lang <- ""
+      code_lines <- character(0)
+    } else if (in_code) {
+      code_lines <- c(code_lines, line)
+    } else {
+      current <- c(current, line)
+    }
+  }
+
+  if (in_code) {
+    blocks[[length(blocks) + 1]] <- list(type = "code", lang = code_lang, content = paste(code_lines, collapse = "\n"))
+  } else {
+    flush_text()
+  }
+
+  if (length(blocks) == 0) {
+    list(list(type = "text", content = text %||% ""))
+  } else {
+    blocks
+  }
+}
+
+render_code_card <- function(code, lang = "", conv_id = NULL, action_state = list()) {
+  lang_label <- if (nzchar(lang %||% "")) lang else "code"
+  tags$div(
+    class = "packet-code-card",
+    tags$div(
+      class = "packet-code-card-head",
+      tags$span(class = "packet-code-lang", lang_label),
+      tags$div(
+        class = "packet-inline-actions",
+        packet_action_button("Copy", "copy", code, conv_id, enabled = TRUE),
+        packet_action_button("Insert", "insert", code, conv_id, enabled = isTRUE(action_state$can_insert))
+      )
+    ),
+    tags$pre(class = "packet-code-block", tags$code(code))
+  )
+}
+
+render_change_card <- function(content, conv_id = NULL, action_state = list()) {
+  change <- parse_packetllm_change(content)
+  if (is.null(change)) {
+    return(render_code_card(content, "packetllm-change", conv_id, action_state))
+  }
+
+  tags$div(
+    class = "packet-change-card",
+    tags$div(
+      class = "packet-change-head",
+      tags$div(
+        tags$div(class = "packet-change-kicker", "Change"),
+        tags$div(class = "packet-change-file", change$file %||% "Active file")
+      ),
+      tags$span(class = "packet-change-target", change$target %||% "Captured selection")
+    ),
+    tags$div(class = "packet-change-section", tags$div(class = "packet-change-label", "Before"), tags$pre(class = "packet-code-block", tags$code(change$before))),
+    tags$div(class = "packet-change-section", tags$div(class = "packet-change-label", "After"), tags$pre(class = "packet-code-block", tags$code(change$after))),
+    tags$div(
+      class = "packet-response-actions",
+      packet_action_button("Copy after", "copy", change$after, conv_id, enabled = TRUE),
+      packet_action_button("Replace", "replace", change$after, conv_id, enabled = isTRUE(action_state$can_replace))
+    )
+  )
+}
+
+parse_packetllm_change <- function(content) {
+  lines <- strsplit(content %||% "", "\n", fixed = TRUE)[[1]]
+  file_line <- grep("^File:\\s*", lines, ignore.case = TRUE)
+  target_line <- grep("^Target:\\s*", lines, ignore.case = TRUE)
+  before_line <- grep("^Before:\\s*$", lines, ignore.case = TRUE)
+  after_line <- grep("^After:\\s*$", lines, ignore.case = TRUE)
+
+  if (length(before_line) == 0 || length(after_line) == 0 || before_line[1] >= after_line[1]) {
+    return(NULL)
+  }
+
+  before <- if ((before_line[1] + 1) <= (after_line[1] - 1)) {
+    lines[(before_line[1] + 1):(after_line[1] - 1)]
+  } else {
+    character(0)
+  }
+  after <- if ((after_line[1] + 1) <= length(lines)) {
+    lines[(after_line[1] + 1):length(lines)]
+  } else {
+    character(0)
+  }
+  before <- strip_fence_lines(before)
+  after <- strip_fence_lines(after)
+
+  list(
+    file = if (length(file_line) > 0) trimws(sub("^File:\\s*", "", lines[file_line[1]], ignore.case = TRUE)) else NULL,
+    target = if (length(target_line) > 0) trimws(sub("^Target:\\s*", "", lines[target_line[1]], ignore.case = TRUE)) else NULL,
+    before = paste(before, collapse = "\n"),
+    after = paste(after, collapse = "\n")
+  )
+}
+
+strip_fence_lines <- function(lines) {
+  if (length(lines) >= 2 && grepl("^```", lines[1]) && grepl("^```\\s*$", lines[length(lines)])) {
+    return(lines[2:(length(lines) - 1)])
+  }
+  lines
+}
+
+packet_action_button <- function(label, action, text, conv_id = NULL, enabled = TRUE) {
+  attrs <- list(
+    type = "button",
+    class = paste("packet-action-btn", paste0("packet-action-", action)),
+    `data-action` = action,
+    `data-conv-id` = conv_id %||% "",
+    `data-text` = text %||% ""
+  )
+  if (!isTRUE(enabled)) {
+    attrs$disabled <- "disabled"
+    attrs$title <- "Refresh context to enable this action."
+  }
+  do.call(tags$button, c(attrs, list(label)))
+}
+
 render_staged_attachments_list_ui <- function(staged_files) {
   renderUI({
-    # Check if staged_files is NULL, empty, or contains only empty strings
     if (is.null(staged_files) || length(staged_files) == 0 || all(staged_files == "")) {
-      # text
-      tags$p(tags$em("No files"), style = "padding: 5px; margin: 0; color: #888; font-size: 0.9em;")
+      tags$span(class = "packet-attachment-empty", "No files")
     } else {
-      # Remove empty strings if any exist
       valid_files <- staged_files[nzchar(staged_files)]
-      if (length(valid_files) == 0) {
-        # text
-        tags$p(tags$em("No files"), style = "padding: 5px; margin: 0; color: #888; font-size: 0.9em;")
-      } else {
-        tagList(
-          tags$ul(style = "margin: 0; padding-left: 15px; list-style-type: none;",
-                  lapply(valid_files, function(file_name) {
-                    tags$li(style="font-size: 0.9em; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
-                            tags$span(class = "glyphicon glyphicon-paperclip", style="margin-right: 4px;"),
-                            tags$span(title = file_name, file_name) # Use the filename directly
-                    )
-                  })
-          )
-        )
-      }
+      tagList(lapply(valid_files, function(file_name) {
+        tags$span(class = "packet-attachment-pill", title = file_name, file_name)
+      }))
     }
   })
 }
+
+# Helper %||%
+`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x

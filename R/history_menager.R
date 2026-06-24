@@ -43,14 +43,10 @@ create_new_conversation <- function(activate = FALSE, add_initial_settings = TRU
   if (is.null(title)) title <- paste("Conversation", format(Sys.time(), "%H:%M:%S"))
   if (.is_verbose()) message(paste("Creating conversation:", conv_id, "title:", title))
 
-  # Default model
-  default_model <- "gpt-5"
-  if (exists("available_openai_models", where = "package:PacketLLM", inherits = FALSE)) {
-    available_models_pkg <- get("available_openai_models", envir = asNamespace("PacketLLM"))
-    if (length(available_models_pkg) > 0) default_model <- available_models_pkg[1]
-  }
+  defaults <- default_model_settings()
+  default_model <- defaults$model
 
-  default_system_message <- "You are a helpful assistant. Respond clearly and precisely, maintaining code formatting when required."
+  default_system_message <- ""
 
   new_conv <- list(
     id = conv_id,
@@ -60,7 +56,13 @@ create_new_conversation <- function(activate = FALSE, add_initial_settings = TRU
     created_at = Sys.time(),
     system_message = "",
     model = default_model,
-    model_locked = FALSE
+    model_locked = FALSE,
+    reasoning_effort = defaults$reasoning_effort,
+    verbosity = defaults$verbosity,
+    max_output_tokens = defaults$max_output_tokens,
+    assistant_behavior = defaults$assistant_behavior,
+    custom_instruction = defaults$custom_instruction,
+    context_mode = defaults$context_mode
   )
 
   if (add_initial_settings) {
@@ -251,7 +253,7 @@ get_all_conversation_ids <- function() names(.history_env$conversations)
 #' @export
 get_conversation_model <- function(id) {
   if (!id %in% names(.history_env$conversations)) return(NULL)
-  .history_env$conversations[[id]]$model %||% "gpt-5"
+  .history_env$conversations[[id]]$model %||% default_model_settings()$model
 }
 
 #' Set model for conversation (if not started)
@@ -278,7 +280,7 @@ set_conversation_model <- function(id, model_name) {
     available_models_pkg <- get("available_openai_models", envir = asNamespace("PacketLLM"))
   } else {
     warning("Could not retrieve available_openai_models from PacketLLM namespace.")
-    available_models_pkg <- c("gpt-5", "gpt-5-mini", "gpt-5-nano")
+    available_models_pkg <- default_model_settings()$model
   }
 
   if (!model_name %in% available_models_pkg) {
@@ -307,6 +309,47 @@ set_conversation_system_message <- function(id, message) {
     return(FALSE)
   }
   .history_env$conversations[[id]]$system_message <- message
+  TRUE
+}
+
+set_conversation_generation_settings <- function(id,
+                                                 reasoning_effort = NULL,
+                                                 verbosity = NULL,
+                                                 max_output_tokens = NULL,
+                                                 assistant_behavior = NULL,
+                                                 custom_instruction = NULL,
+                                                 context_mode = NULL) {
+  if (!id %in% names(.history_env$conversations)) {
+    warning("Attempting to set settings for non-existent conversation: ", id)
+    return(FALSE)
+  }
+
+  conv <- .history_env$conversations[[id]]
+  if (!is.null(reasoning_effort)) {
+    if (!reasoning_effort %in% valid_reasoning_efforts()) return(FALSE)
+    conv$reasoning_effort <- reasoning_effort
+  }
+  if (!is.null(verbosity)) {
+    if (!verbosity %in% valid_verbosity_levels()) return(FALSE)
+    conv$verbosity <- verbosity
+  }
+  if (!is.null(max_output_tokens)) {
+    max_output_tokens <- suppressWarnings(as.integer(max_output_tokens))
+    conv$max_output_tokens <- if (is.na(max_output_tokens) || max_output_tokens <= 0) NA_integer_ else max_output_tokens
+  }
+  if (!is.null(assistant_behavior)) {
+    if (!assistant_behavior %in% assistant_behavior_choices()) return(FALSE)
+    conv$assistant_behavior <- assistant_behavior
+  }
+  if (!is.null(custom_instruction)) {
+    if (!is.character(custom_instruction) || length(custom_instruction) != 1 || is.na(custom_instruction)) return(FALSE)
+    conv$custom_instruction <- custom_instruction
+  }
+  if (!is.null(context_mode)) {
+    conv$context_mode <- normalize_context_mode(context_mode)
+  }
+
+  .history_env$conversations[[id]] <- conv
   TRUE
 }
 
