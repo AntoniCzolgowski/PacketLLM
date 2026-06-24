@@ -278,7 +278,8 @@ render_code_card <- function(code, lang = "", conv_id = NULL, action_state = lis
       tags$div(
         class = "packet-inline-actions",
         packet_action_button("Copy", "copy", code, conv_id, enabled = TRUE),
-        packet_action_button("Insert", "insert", code, conv_id, enabled = isTRUE(action_state$can_insert))
+        packet_action_button("Insert", "insert", code, conv_id, enabled = isTRUE(action_state$can_insert)),
+        packet_action_button("Replace", "replace", code, conv_id, enabled = isTRUE(action_state$can_replace))
       )
     ),
     tags$pre(class = "packet-code-block", tags$code(code))

@@ -47,3 +47,15 @@ test_that("markdown renderer formats common markdown safely", {
   expect_true(grepl("&lt;script&gt;alert(1)&lt;/script&gt;", html, fixed = TRUE))
   expect_false(grepl("<script>alert(1)</script>", html, fixed = TRUE))
 })
+
+test_that("code cards expose replace when a selection target exists", {
+  rendered <- htmltools::renderTags(PacketLLM:::render_code_card(
+    "x <- 2",
+    lang = "r",
+    conv_id = "conv_1",
+    action_state = list(can_insert = TRUE, can_replace = TRUE)
+  ))
+
+  expect_true(grepl("packet-action-replace", rendered$html, fixed = TRUE))
+  expect_true(grepl(">Replace</button>", rendered$html, fixed = TRUE))
+})
