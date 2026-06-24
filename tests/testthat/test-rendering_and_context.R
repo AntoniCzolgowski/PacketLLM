@@ -59,3 +59,14 @@ test_that("code cards expose replace when a selection target exists", {
   expect_true(grepl("packet-action-replace", rendered$html, fixed = TRUE))
   expect_true(grepl(">Replace</button>", rendered$html, fixed = TRUE))
 })
+
+test_that("replace preview modal shows current and replacement code", {
+  context <- list(path = "R/example.R", selection_text = "x <- 1")
+  rendered <- htmltools::renderTags(PacketLLM:::replace_preview_modal("x <- 2", context))
+
+  expect_true(grepl("Preview replacement", rendered$html, fixed = TRUE))
+  expect_true(grepl("Current selection", rendered$html, fixed = TRUE))
+  expect_true(grepl("Replacement", rendered$html, fixed = TRUE))
+  expect_true(grepl("x &lt;- 1", rendered$html, fixed = TRUE))
+  expect_true(grepl("x &lt;- 2", rendered$html, fixed = TRUE))
+})

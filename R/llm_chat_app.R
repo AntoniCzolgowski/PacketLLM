@@ -55,6 +55,7 @@ run_llm_chat_app <- function() {
     file_upload_context_rv <- reactiveVal(NULL)
     staged_attachments_rv <- reactiveVal(list())
     context_state_rv <- reactiveVal(list())
+    pending_replace_rv <- reactiveVal(NULL)
 
     get_context_for_tab <- function(conv_id) {
       context_state_rv()[[conv_id]]
@@ -333,16 +334,39 @@ run_llm_chat_app <- function() {
       req(conv_id, conv_id %in% open_tab_ids_rv(), nzchar(text))
 
       context <- get_context_for_tab(conv_id)
+      if (identical(action$action, "replace")) {
+        validation <- validate_replacement_target(context)
+        if (!isTRUE(validation$ok)) {
+          showNotification(validation$message, type = "warning", duration = 4)
+          return()
+        }
+        pending_replace_rv(list(conv_id = conv_id, text = text, context = context))
+        showModal(replace_preview_modal(text, context))
+        return()
+      }
+
       result <- switch(
         action$action,
         insert = insert_text_into_rstudio(text, context),
-        replace = replace_selection_in_rstudio(text, context),
         list(ok = FALSE, message = "Unsupported action.")
       )
 
       showNotification(result$message, type = if (isTRUE(result$ok)) "message" else "warning", duration = 4)
       if (isTRUE(result$ok)) {
         capture_context_for_tab(conv_id)
+      }
+    }, ignoreInit = TRUE)
+
+    observeEvent(input$confirm_replace_selection, {
+      pending <- pending_replace_rv()
+      req(pending)
+
+      result <- replace_selection_in_rstudio(pending$text, pending$context)
+      removeModal()
+      pending_replace_rv(NULL)
+      showNotification(result$message, type = if (isTRUE(result$ok)) "message" else "warning", duration = 4)
+      if (isTRUE(result$ok) && pending$conv_id %in% open_tab_ids_rv()) {
+        capture_context_for_tab(pending$conv_id)
       }
     }, ignoreInit = TRUE)
 
@@ -474,6 +498,42 @@ scroll_active_chat <- function() {
       setTimeout(function() { el.scrollTop(el[0].scrollHeight); }, 80);
     }
   ")
+}
+
+replace_preview_modal <- function(replacement_text, context) {
+  target_label <- if (!is.null(context$path) && nzchar(context$path)) {
+    basename(context$path)
+  } else {
+    "active editor"
+  }
+
+  modalDialog(
+    title = "Preview replacement",
+    tags$div(
+      class = "packet-replace-preview",
+      tags$div(
+        class = "packet-replace-target",
+        tags$span(class = "packet-change-kicker", "Target"),
+        tags$span(class = "packet-change-file", target_label)
+      ),
+      tags$div(
+        class = "packet-change-section",
+        tags$div(class = "packet-change-label", "Current selection"),
+        tags$pre(class = "packet-code-block", tags$code(context$selection_text %||% ""))
+      ),
+      tags$div(
+        class = "packet-change-section",
+        tags$div(class = "packet-change-label", "Replacement"),
+        tags$pre(class = "packet-code-block", tags$code(replacement_text %||% ""))
+      )
+    ),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_replace_selection", "Replace selection", class = "packet-primary-btn")
+    ),
+    easyClose = TRUE,
+    size = "l"
+  )
 }
 
 packetllm_client_script <- function() {
@@ -729,6 +789,25 @@ packetllm_styles <- function() {
       max-width: 45%;
     }
     .packet-change-section { padding: 10px; border-bottom: 1px solid var(--packet-border); }
+    .packet-replace-preview {
+      border: 1px solid var(--packet-border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fcfcfd;
+    }
+    .packet-replace-target {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--packet-border);
+      background: #f8fafc;
+    }
+    .modal-dialog .packet-code-block {
+      max-height: 260px;
+      overflow: auto;
+    }
     .packet-code-block {
       margin: 0;
       padding: 10px;
