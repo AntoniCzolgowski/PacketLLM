@@ -4,6 +4,8 @@
 * RStudio workflow: add editor-aware context capture, Addin registration, and explicit copy, insert, and replace actions.
 * UI/Settings: redesign the gadget with responsive code-focused output, assistant behavior presets, reasoning effort, verbosity, and optional max output controls.
 * Safety: render model and user text safely instead of treating arbitrary chat content as raw HTML.
+* Rendering: add safe Markdown and LaTeX math formatting for assistant output.
+* History: save gadget conversations locally so they can be restored after closing and reopening the gadget.
 
 # PacketLLM 0.1.0
 

@@ -50,7 +50,7 @@ render_message_card <- function(msg, conv_id = NULL, context = NULL) {
         } else if (identical(block$type, "code")) {
           render_code_card(block$content, block$lang, conv_id, action_state)
         } else {
-          tags$div(class = "packet-text-block packet-prewrap", block$content)
+          render_markdown_text_block(block$content)
         }
       })),
       if (identical(role_display, "assistant")) {
@@ -61,6 +61,161 @@ render_message_card <- function(msg, conv_id = NULL, context = NULL) {
       }
     )
   )
+}
+
+render_markdown_text_block <- function(text) {
+  shiny::withMathJax(tags$div(class = "packet-text-block packet-markdown", render_markdown_blocks(text)))
+}
+
+render_markdown_blocks <- function(text) {
+  lines <- strsplit(text %||% "", "\n", fixed = TRUE)[[1]]
+  blocks <- list()
+  i <- 1
+
+  while (i <= length(lines)) {
+    line <- lines[i]
+    if (!nzchar(trimws(line))) {
+      i <- i + 1
+      next
+    }
+
+    heading <- regexec("^(#{1,6})\\s+(.+)$", line, perl = TRUE)
+    heading_match <- regmatches(line, heading)[[1]]
+    if (length(heading_match) == 3) {
+      level <- nchar(heading_match[2])
+      blocks[[length(blocks) + 1]] <- do.call(tags[[paste0("h", level)]], list(inline_markdown_elements(heading_match[3])))
+      i <- i + 1
+      next
+    }
+
+    if (i < length(lines) && is_table_separator(lines[i + 1]) && grepl("\\|", line, fixed = TRUE)) {
+      table_lines <- line
+      i <- i + 2
+      while (i <= length(lines) && grepl("\\|", lines[i], fixed = TRUE) && nzchar(trimws(lines[i]))) {
+        table_lines <- c(table_lines, lines[i])
+        i <- i + 1
+      }
+      blocks[[length(blocks) + 1]] <- render_markdown_table(table_lines)
+      next
+    }
+
+    if (grepl("^\\s*[-*+]\\s+", line)) {
+      items <- character(0)
+      while (i <= length(lines) && grepl("^\\s*[-*+]\\s+", lines[i])) {
+        items <- c(items, sub("^\\s*[-*+]\\s+", "", lines[i]))
+        i <- i + 1
+      }
+      blocks[[length(blocks) + 1]] <- tags$ul(class = "packet-md-list", lapply(items, function(item) tags$li(inline_markdown_elements(item))))
+      next
+    }
+
+    if (grepl("^\\s*[0-9]+\\.\\s+", line)) {
+      items <- character(0)
+      while (i <= length(lines) && grepl("^\\s*[0-9]+\\.\\s+", lines[i])) {
+        items <- c(items, sub("^\\s*[0-9]+\\.\\s+", "", lines[i]))
+        i <- i + 1
+      }
+      blocks[[length(blocks) + 1]] <- tags$ol(class = "packet-md-list", lapply(items, function(item) tags$li(inline_markdown_elements(item))))
+      next
+    }
+
+    if (grepl("^\\s*>\\s?", line)) {
+      quote_lines <- character(0)
+      while (i <= length(lines) && grepl("^\\s*>\\s?", lines[i])) {
+        quote_lines <- c(quote_lines, sub("^\\s*>\\s?", "", lines[i]))
+        i <- i + 1
+      }
+      blocks[[length(blocks) + 1]] <- tags$blockquote(class = "packet-md-quote", inline_markdown_elements(paste(quote_lines, collapse = " ")))
+      next
+    }
+
+    paragraph <- line
+    i <- i + 1
+    while (i <= length(lines) && nzchar(trimws(lines[i])) && !is_markdown_block_start(lines, i)) {
+      paragraph <- paste(paragraph, lines[i])
+      i <- i + 1
+    }
+    blocks[[length(blocks) + 1]] <- tags$p(class = "packet-md-p", inline_markdown_elements(paragraph))
+  }
+
+  if (length(blocks) == 0) {
+    return(tags$p(class = "packet-md-p", ""))
+  }
+  tagList(blocks)
+}
+
+is_markdown_block_start <- function(lines, i) {
+  if (i > length(lines)) return(FALSE)
+  line <- lines[i]
+  grepl("^(#{1,6})\\s+(.+)$", line, perl = TRUE) ||
+    grepl("^\\s*[-*+]\\s+", line) ||
+    grepl("^\\s*[0-9]+\\.\\s+", line) ||
+    grepl("^\\s*>\\s?", line) ||
+    (i < length(lines) && is_table_separator(lines[i + 1]) && grepl("\\|", line, fixed = TRUE))
+}
+
+is_table_separator <- function(line) {
+  grepl("^\\s*\\|?\\s*:?-{3,}:?\\s*(\\|\\s*:?-{3,}:?\\s*)+\\|?\\s*$", line)
+}
+
+render_markdown_table <- function(table_lines) {
+  header <- split_table_row(table_lines[1])
+  body <- lapply(table_lines[-1], split_table_row)
+  tags$table(
+    class = "packet-md-table",
+    tags$thead(tags$tr(lapply(header, function(cell) tags$th(inline_markdown_elements(cell))))),
+    tags$tbody(lapply(body, function(row) tags$tr(lapply(row, function(cell) tags$td(inline_markdown_elements(cell))))))
+  )
+}
+
+split_table_row <- function(line) {
+  line <- trimws(line)
+  line <- sub("^\\|", "", line)
+  line <- sub("\\|$", "", line)
+  trimws(strsplit(line, "|", fixed = TRUE)[[1]])
+}
+
+inline_markdown_elements <- function(text) {
+  text <- text %||% ""
+  patterns <- list(
+    code = "`([^`]+)`",
+    link = "\\[([^\\]]+)\\]\\((https?://[^\\s)]+|mailto:[^\\s)]+)\\)",
+    bold = "\\*\\*([^*]+)\\*\\*",
+    italic = "\\*([^*]+)\\*"
+  )
+  out <- list()
+  rest <- text
+
+  while (nzchar(rest)) {
+    matches <- lapply(patterns, function(pattern) regexpr(pattern, rest, perl = TRUE))
+    starts <- vapply(matches, function(match) if (match[1] < 0) Inf else as.integer(match[1]), numeric(1))
+    if (all(is.infinite(starts))) {
+      out[[length(out) + 1]] <- rest
+      break
+    }
+
+    chosen_name <- names(which.min(starts))
+    chosen <- matches[[chosen_name]]
+    start <- as.integer(chosen[1])
+    len <- attr(chosen, "match.length")
+    if (start > 1) {
+      out[[length(out) + 1]] <- substr(rest, 1, start - 1)
+    }
+
+    match_text <- substr(rest, start, start + len - 1)
+    groups <- regmatches(match_text, regexec(patterns[[chosen_name]], match_text, perl = TRUE))[[1]]
+    out[[length(out) + 1]] <- switch(
+      chosen_name,
+      code = tags$code(class = "packet-inline-code", groups[2]),
+      link = tags$a(href = groups[3], target = "_blank", rel = "noopener noreferrer", groups[2]),
+      bold = tags$strong(inline_markdown_elements(groups[2])),
+      italic = tags$em(inline_markdown_elements(groups[2])),
+      match_text
+    )
+    rest <- substr(rest, start + len, nchar(rest))
+  }
+
+  tagList(out)
 }
 
 split_response_blocks <- function(text) {

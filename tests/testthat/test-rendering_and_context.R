@@ -36,3 +36,14 @@ test_that("context formatter handles unavailable context", {
   expect_false(context$available)
   expect_equal(PacketLLM:::format_rstudio_context_for_prompt(context), "")
 })
+
+test_that("markdown renderer formats common markdown safely", {
+  rendered <- htmltools::renderTags(PacketLLM:::render_markdown_blocks("## Title\n\n- **bold** item\n\n`x <- 1`\n\n<script>alert(1)</script>"))
+  html <- rendered$html
+
+  expect_true(grepl("<h2>Title</h2>", html, fixed = TRUE))
+  expect_true(grepl("<strong>bold</strong>", html, fixed = TRUE))
+  expect_true(grepl("packet-inline-code", html, fixed = TRUE))
+  expect_true(grepl("&lt;script&gt;alert(1)&lt;/script&gt;", html, fixed = TRUE))
+  expect_false(grepl("<script>alert(1)</script>", html, fixed = TRUE))
+})

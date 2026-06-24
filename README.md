@@ -16,9 +16,12 @@ app.
 - **Responsive gadget UI**: works in the Viewer pane and in a popped-out
   browser window.
 - **Code-focused responses**: renders explanations, code blocks, and
-  proposed changes in a clean developer-oriented layout.
+  proposed changes in a clean developer-oriented layout with Markdown
+  and LaTeX math support.
 - **Safe editor actions**: copy is always available; insert and replace
   are enabled only when PacketLLM has a verified RStudio editor target.
+- **Restored conversations**: gadget conversations are saved locally so
+  you can close PacketLLM, run code in RStudio, and reopen the chat.
 - **Model presets**: choose Best, Balanced, or Fast while advanced
   settings reveal the exact model ID.
 - **Assistant behavior**: use presets such as Default, Concise,

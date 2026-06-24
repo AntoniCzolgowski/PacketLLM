@@ -96,6 +96,7 @@ base_packetllm_instruction <- function() {
     "Use the supplied RStudio context when it is relevant.",
     "Do not claim that code was inserted, replaced, saved, or executed unless the user explicitly performed that action.",
     "When suggesting a replacement for selected code, prefer a concise explanation followed by a fenced R code block containing the replacement.",
+    "When writing math, use LaTeX delimiters \\(...\\) for inline math and \\[...\\] for display math.",
     "For multi-step changes, describe exact file targets and keep the proposed diff small.",
     "Preserve R code formatting and use testthat/roxygen2 conventions when appropriate.",
     sep = "\n"

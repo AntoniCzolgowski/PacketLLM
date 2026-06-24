@@ -33,6 +33,7 @@ Imports:
 Depends:
     R (>= 4.1.0)
 Suggests: 
+    htmltools,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

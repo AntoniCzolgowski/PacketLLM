@@ -47,7 +47,7 @@ run_llm_chat_app <- function() {
   )
 
   server <- function(input, output, session) {
-    initial_conv_id <- initialize_history_manager()
+    initial_conv_id <- initialize_history_manager(persist = TRUE)
     active_conv_id_rv <- reactiveVal(NULL)
     open_tab_ids_rv <- reactiveVal(character(0))
     first_tab_created <- reactiveVal(FALSE)
@@ -163,7 +163,13 @@ run_llm_chat_app <- function() {
 
     observeEvent(TRUE, {
       req(!first_tab_created())
-      create_and_append_new_tab(initial_conv_id, select_tab = TRUE)
+      conversation_ids <- get_all_conversation_ids()
+      if (length(conversation_ids) == 0) {
+        conversation_ids <- initialize_history_manager(persist = TRUE)
+      }
+      for (conv_id in conversation_ids) {
+        create_and_append_new_tab(conv_id, select_tab = identical(conv_id, initial_conv_id))
+      }
       first_tab_created(TRUE)
       set_active_conversation(initial_conv_id)
       active_conv_id_rv(initial_conv_id)
@@ -414,7 +420,12 @@ run_llm_chat_app <- function() {
     })
 
     observeEvent(input$close_app_btn, {
+      save_history_manager()
       shiny::stopApp()
+    })
+
+    session$onSessionEnded(function() {
+      save_history_manager()
     })
   }
 
@@ -574,9 +585,10 @@ packetllm_styles <- function() {
       border: 1px solid var(--packet-border);
       border-top: none;
       min-height: calc(100vh - 112px);
-      display: flex;
+      display: none;
       flex-direction: column;
     }
+    .tab-content > .tab-pane.active { display: flex; }
     .packet-close-tab {
       border: none;
       background: transparent;
@@ -636,6 +648,50 @@ packetllm_styles <- function() {
     .packet-message-body { padding: 10px; }
     .packet-prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
     .packet-text-block { margin-bottom: 8px; line-height: 1.45; }
+    .packet-markdown h1, .packet-markdown h2, .packet-markdown h3,
+    .packet-markdown h4, .packet-markdown h5, .packet-markdown h6 {
+      margin: 10px 0 6px;
+      font-weight: 650;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+    .packet-markdown h1 { font-size: 20px; }
+    .packet-markdown h2 { font-size: 18px; }
+    .packet-markdown h3 { font-size: 16px; }
+    .packet-markdown h4, .packet-markdown h5, .packet-markdown h6 { font-size: 14px; }
+    .packet-md-p { margin: 0 0 9px; }
+    .packet-md-list { margin: 0 0 10px 20px; padding-left: 16px; }
+    .packet-md-list li { margin: 3px 0; }
+    .packet-md-quote {
+      margin: 8px 0;
+      padding: 8px 10px;
+      border-left: 3px solid var(--packet-border);
+      color: var(--packet-muted);
+      background: #f8fafc;
+    }
+    .packet-inline-code {
+      font-family: Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.92em;
+      background: var(--packet-soft);
+      color: #182230;
+      border: 1px solid var(--packet-border);
+      border-radius: 4px;
+      padding: 1px 4px;
+    }
+    .packet-md-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 13px;
+      overflow: hidden;
+    }
+    .packet-md-table th, .packet-md-table td {
+      border: 1px solid var(--packet-border);
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+    .packet-md-table th { background: #f8fafc; font-weight: 650; }
+    .packet-markdown .MathJax, .packet-markdown mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
     .packet-code-card, .packet-change-card {
       border: 1px solid var(--packet-border);
       border-radius: 8px;

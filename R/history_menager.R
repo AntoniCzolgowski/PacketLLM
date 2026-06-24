@@ -3,6 +3,7 @@
 .history_env$conversations <- list()
 .history_env$active_conversation_id <- NULL
 .history_env$conversation_counter <- 0
+.history_env$persistence_enabled <- FALSE
 
 # Verbose flag
 .is_verbose <- function() getOption("PacketLLM.verbose", default = FALSE)
@@ -16,11 +17,27 @@ generate_conversation_id <- function() {
 
 #' Initialize the history manager
 #'
-#' Clears state and creates a single new conversation, then activates it.
+#' Initializes state and creates or restores a conversation, then activates it.
+#' @param persist Logical. Restore and save local gadget history?
 #' @return Character: ID of the created conversation.
 #' @export
-initialize_history_manager <- function() {
+initialize_history_manager <- function(persist = FALSE) {
   if (interactive()) message("Initializing history manager...")
+  .history_env$persistence_enabled <- isTRUE(persist)
+
+  if (isTRUE(persist)) {
+    if (length(.history_env$conversations) > 0) {
+      active_id <- get_active_conversation_id() %||% names(.history_env$conversations)[1]
+      set_active_conversation(active_id)
+      return(active_id)
+    }
+
+    restored_id <- load_history_manager()
+    if (!is.null(restored_id)) {
+      return(restored_id)
+    }
+  }
+
   .history_env$conversations <- list()
   .history_env$active_conversation_id <- NULL
   .history_env$conversation_counter <- 0
@@ -29,6 +46,71 @@ initialize_history_manager <- function() {
   set_active_conversation(first_id)
   if (.is_verbose()) message(paste("Set active conversation to:", first_id))
   first_id
+}
+
+history_storage_path <- function() {
+  override <- getOption("PacketLLM.history_path", default = NULL)
+  if (!is.null(override) && nzchar(override)) {
+    override_dir <- dirname(override)
+    if (!dir.exists(override_dir)) {
+      dir.create(override_dir, recursive = TRUE, showWarnings = FALSE)
+    }
+    return(override)
+  }
+
+  data_dir <- tools::R_user_dir("PacketLLM", "data")
+  if (!dir.exists(data_dir)) {
+    dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  file.path(data_dir, "conversation-history.rds")
+}
+
+save_history_manager <- function() {
+  if (!isTRUE(.history_env$persistence_enabled)) {
+    return(invisible(FALSE))
+  }
+
+  state <- list(
+    conversations = .history_env$conversations,
+    active_conversation_id = .history_env$active_conversation_id,
+    conversation_counter = .history_env$conversation_counter
+  )
+
+  tryCatch({
+    saveRDS(state, history_storage_path())
+    invisible(TRUE)
+  }, error = function(e) {
+    warning("Could not save PacketLLM history: ", e$message, call. = FALSE)
+    invisible(FALSE)
+  })
+}
+
+load_history_manager <- function() {
+  path <- history_storage_path()
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+
+  state <- tryCatch(readRDS(path), error = function(e) NULL)
+  if (!is.list(state) || !is.list(state$conversations) || length(state$conversations) == 0) {
+    return(NULL)
+  }
+
+  .history_env$conversations <- state$conversations
+  .history_env$conversation_counter <- state$conversation_counter %||% length(state$conversations)
+  active_id <- state$active_conversation_id
+  if (is.null(active_id) || !active_id %in% names(.history_env$conversations)) {
+    active_id <- names(.history_env$conversations)[1]
+  }
+  .history_env$active_conversation_id <- active_id
+  active_id
+}
+
+save_history_if_enabled <- function() {
+  if (isTRUE(.history_env$persistence_enabled)) {
+    save_history_manager()
+  }
+  invisible(NULL)
 }
 
 #' Create a new conversation
@@ -75,6 +157,7 @@ create_new_conversation <- function(activate = FALSE, add_initial_settings = TRU
 
   .history_env$conversations[[conv_id]] <- new_conv
   if (activate) set_active_conversation(conv_id)
+  save_history_if_enabled()
   conv_id
 }
 
@@ -161,6 +244,7 @@ add_message_to_active_history <- function(role, content) {
   }
 
   .history_env$conversations[[active_id]] <- conv
+  save_history_if_enabled()
   return(return_value)
 }
 
@@ -178,6 +262,7 @@ delete_conversation <- function(id) {
     if (.is_verbose()) message("Deleted the active conversation. Resetting active_conversation_id.")
     .history_env$active_conversation_id <- NULL
   }
+  save_history_if_enabled()
   TRUE
 }
 
@@ -198,6 +283,7 @@ set_active_conversation <- function(id) {
   if (is.null(.history_env$active_conversation_id) || .history_env$active_conversation_id != id) {
     if (.is_verbose()) message(paste("Set active conversation to ID:", id))
     .history_env$active_conversation_id <- id
+    save_history_if_enabled()
   }
   invisible(NULL)
 }
@@ -291,6 +377,7 @@ set_conversation_model <- function(id, model_name) {
 
   .history_env$conversations[[id]]$model <- model_name
   if (.is_verbose()) message(paste("Set model for", id, "to:", model_name))
+  save_history_if_enabled()
   TRUE
 }
 
@@ -309,6 +396,7 @@ set_conversation_system_message <- function(id, message) {
     return(FALSE)
   }
   .history_env$conversations[[id]]$system_message <- message
+  save_history_if_enabled()
   TRUE
 }
 
@@ -350,6 +438,7 @@ set_conversation_generation_settings <- function(id,
   }
 
   .history_env$conversations[[id]] <- conv
+  save_history_if_enabled()
   TRUE
 }
 
@@ -381,13 +470,19 @@ get_conversation_data <- function(id) {
 }
 
 #' Reset the history manager
+#' @param clear_persistent Logical. Delete saved local gadget history too?
 #' @return Invisible NULL.
 #' @export
-reset_history_manager <- function() {
+reset_history_manager <- function(clear_persistent = FALSE) {
   if (interactive()) message("Resetting history manager...")
   .history_env$conversations <- list()
   .history_env$active_conversation_id <- NULL
   .history_env$conversation_counter <- 0
+  .history_env$persistence_enabled <- FALSE
+  if (isTRUE(clear_persistent)) {
+    path <- history_storage_path()
+    if (file.exists(path)) unlink(path)
+  }
   invisible(NULL)
 }
 
@@ -427,6 +522,7 @@ add_attachment_to_active_conversation <- function(name, content) {
   conv$attachments <- c(conv_attachments, list(new_attachment))
   .history_env$conversations[[active_id]] <- conv
   if (.is_verbose()) message(paste("Added attachment", name, "to conversation", active_id))
+  save_history_if_enabled()
   TRUE
 }
 

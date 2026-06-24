@@ -137,3 +137,25 @@ test_that("Model locking works correctly", {
 
   reset_history_manager()
 })
+
+test_that("persistent history can be restored for gadget sessions", {
+  history_file <- tempfile(fileext = ".rds")
+  old_path <- getOption("PacketLLM.history_path")
+  options(PacketLLM.history_path = history_file)
+  on.exit(options(PacketLLM.history_path = old_path), add = TRUE)
+
+  reset_history_manager(clear_persistent = TRUE)
+  conv_id <- initialize_history_manager(persist = TRUE)
+  add_message_to_active_history("user", "Remember this chat")
+  save_result <- PacketLLM:::save_history_manager()
+  expect_true(isTRUE(save_result))
+
+  reset_history_manager()
+  restored_id <- initialize_history_manager(persist = TRUE)
+
+  expect_equal(restored_id, conv_id)
+  expect_equal(length(get_conversation_history(restored_id)), 1)
+  expect_equal(get_conversation_history(restored_id)[[1]]$content, "Remember this chat")
+
+  reset_history_manager(clear_persistent = TRUE)
+})
