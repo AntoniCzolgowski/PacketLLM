@@ -32,11 +32,13 @@ Imports:
     utils      
 Depends:
     R (>= 4.1.0)
-Suggests: 
+Suggests:
     htmltools,
     knitr,
+    remotes,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    usethis
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Language: en-US

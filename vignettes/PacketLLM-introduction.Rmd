@@ -47,10 +47,10 @@ PacketLLM requires an OpenAI API key.
   OPENAI_API_KEY='your_secret_api_key_here'
   ```
   
-  You can open the file using:
-  
+  You can open the file using (requires the `usethis` package):
+
   ```r
-  usethis::edit_r_environ()         # User-level
+  usethis::edit_r_environ()           # User-level
   usethis::edit_r_environ("project")  # Project-level
   ```
   
@@ -66,15 +66,17 @@ PacketLLM requires an OpenAI API key.
 
 ## Installation
 
-Install PacketLLM from GitHub:
+Install PacketLLM from CRAN:
 
 ```r
-# Uncomment the next line if you need the remotes package
+install.packages("PacketLLM")
+```
+
+Development version from GitHub:
+
+```r
 # install.packages("remotes")
 remotes::install_github("AntoniCzolgowski/PacketLLM")
-
-# From CRAN
-install.packages(PacketLLM)
 ```
 
 ## Launching the Chat Gadget
