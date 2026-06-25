@@ -4,6 +4,7 @@
 .httr-oauth
 .DS_Store
 .quarto
+README.html
 inst/doc
 /doc/
 /Meta/

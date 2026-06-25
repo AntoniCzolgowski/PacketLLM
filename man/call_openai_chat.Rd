@@ -2,28 +2,36 @@
 % Please edit documentation in R/openai_api.R
 \name{call_openai_chat}
 \alias{call_openai_chat}
-\title{Call OpenAI API}
+\title{Call the configured AI model}
 \usage{
-call_openai_chat(messages, model)
+call_openai_chat(
+  messages,
+  model,
+  reasoning_effort = "medium",
+  verbosity = "low",
+  max_output_tokens = NA_integer_
+)
 }
 \arguments{
-\item{messages}{List of messages (each a list with 'role' and 'content').}
+\item{messages}{List of messages, each with \code{role} and \code{content}.}
 
-\item{model}{OpenAI model to use.}
+\item{model}{Model ID to use.}
+
+\item{reasoning_effort}{Reasoning effort: \code{low}, \code{medium}, \code{high}, or \code{xhigh}.}
+
+\item{verbosity}{Output verbosity: \code{low}, \code{medium}, or \code{high}.}
+
+\item{max_output_tokens}{Optional maximum output tokens.}
 }
 \value{
 Character string with assistant reply, or NULL on unexpected response.
 }
 \description{
-Sends messages to the OpenAI Chat Completions API and returns the assistant content.
-Temperature is not sent; models run with API defaults.
+Sends messages to the Responses API and returns assistant text.
 }
 \examples{
 \dontrun{
-  msgs <- list(
-    list(role = "system", content = "You are concise."),
-    list(role = "user", content = "What does httr do?")
-  )
-  call_openai_chat(messages = msgs, model = "gpt-5-mini")
+  msgs <- list(list(role = "user", content = "What does httr do?"))
+  call_openai_chat(messages = msgs, model = "gpt-5.4-mini")
 }
 }

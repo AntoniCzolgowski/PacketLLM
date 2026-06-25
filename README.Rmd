@@ -11,90 +11,177 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
-# Load the package to access its functions if needed within the README
-# library(PacketLLM)
 ```
 
-PacketLLM: Interactive OpenAI Chat within RStudio
+# PacketLLM
 
-PacketLLM integrates OpenAI's powerful GPT-5 language models directly into your RStudio workflow via an interactive RStudio Gadget interface.
+An RStudio gadget that connects an AI assistant to your editor: context-aware, non-blocking, and with direct code insertion and replacement.
 
-Stop switching between windows! Leverage state-of-the-art AI to streamline tasks such as:
-- Generating R code snippets
-- Explaining complex code or concepts
-- Debugging assistance
-- Summarizing documents
-- Analyzing text content from files
-- Brainstorming ideas
+[![CRAN status](https://www.r-pkg.org/badges/version/PacketLLM)](https://CRAN.R-project.org/package=PacketLLM)
+[![R-CMD-check](https://github.com/AntoniCzolgowski/PacketLLM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/AntoniCzolgowski/PacketLLM/actions)
 
-...all without leaving your familiar RStudio environment.
+PacketLLM runs as an RStudio gadget (Viewer pane or pop-out window). It automatically captures your active selection, open file, and package metadata, so you can ask questions about your actual code without copy-pasting anything.
 
-Key Features
+---
 
-Seamless RStudio Integration:  
-Runs as a responsive Shiny Gadget within RStudio's Viewer pane (can be popped out into a separate window).
+## Key features
 
-Interactive Chat:  
-Engage in natural language conversations with selected OpenAI models.
+**Context-aware conversations**
 
-Multiple Conversations:  
-Manage several distinct chat sessions simultaneously using a familiar tabbed interface.
+The gadget polls the RStudio editor every second and feeds the current context into every message. Four modes control scope:
 
-Contextual File Uploads:  
-Provide context to the LLM by uploading local files directly into a conversation.  
-Supported formats:
-- .R / .R scripts
-- .pdf documents
-- .docx Word documents
+| Mode | What the model sees |
+|------|---------------------|
+| Auto | Selection if present, else active file, else project metadata |
+| Focused | Active selection or file only |
+| Project | Active file + `DESCRIPTION` + project file list |
+| None | Only the typed message |
 
-Per-Conversation Settings:  
-Tailor the AI's behavior for each chat by adjusting:
-- The specific OpenAI model (e.g., gpt-5, gpt-5 mini, gpt-5 nano).
-- A custom system message to define the AI's role or instructions.
+**Non-blocking API calls**
 
-Asynchronous Operations:  
-API calls are handled asynchronously, ensuring the R console remains responsive while waiting for the model's reply.
+Requests run in a background thread via `future` and `promises`. The R console stays fully usable while the model is thinking.
 
-Model Flexibility:  
-Easily switch between available OpenAI chat models before starting a new conversation.
+**Editor actions**
 
-Installation
+Each code block in a response exposes three buttons:
 
-You can install the development version of PacketLLM from GitHub with:
+- **Copy:** puts the code on the clipboard.
+- **Insert:** places the code at the captured cursor position in the active source document.
+- **Replace:** opens a before/after preview, then validates that the editor selection has not changed since it was captured before writing the replacement. If it has changed, the action is blocked until context refreshes.
+
+**Persistent conversations**
+
+History, settings, and attached file names are written to `tools::R_user_dir("PacketLLM", "data")` automatically. Closing the gadget and reopening it, even after restarting RStudio, restores every conversation exactly as it was.
+
+**Model presets**
+
+Three presets cover common trade-offs between quality and latency:
+
+| Preset | Model | Best for |
+|--------|-------|----------|
+| Best | gpt-5.5 | Complex reasoning, architecture review |
+| Balanced | gpt-5.4 | Day-to-day development |
+| Fast | gpt-5.4-mini | Quick edits, short questions |
+
+The model is selectable before the first message in a conversation and locked after that to keep the context consistent.
+
+**Assistant behavior presets**
+
+| Preset | Effect |
+|--------|--------|
+| Default | Practical, precise R-focused responses |
+| Concise | Short explanations, compact code |
+| Code-focused | Runnable code first, minimal prose |
+| Reviewer | Leads with bugs, risks, and CRAN concerns |
+| Custom | Your own system instruction |
+
+**File attachments**
+
+Attach `.R`, `.pdf`, `.docx`, or `.txt` files as additional context. Attached files are stored in the conversation and included in every subsequent message.
+
+**Safe rendering**
+
+Assistant output is parsed into typed blocks (text, code, change cards) and rendered as structured HTML. User and model content is never injected as raw HTML. Markdown headings, lists, tables, inline formatting, and LaTeX math (`\(...\)` and `\[...\]`) are all supported.
+
+---
+
+## Installation
 
 ```r
-# install.packages("remotes")  # Uncomment if you don't have remotes installed
+install.packages("PacketLLM")
+```
+
+Development version from GitHub:
+
+```r
+# install.packages("remotes")
 remotes::install_github("AntoniCzolgowski/PacketLLM")
 ```
 
-Configuration: OpenAI API Key (Crucial!)
+---
 
-PacketLLM requires an OpenAI API key to communicate with the language models.
+## Configuration
 
-Obtain an API Key:  
-If you don't have one, sign up and get an API key from OpenAI.
+PacketLLM reads the API key from the `OPENAI_API_KEY` environment variable. Add it to your user-level `.Renviron`:
 
-Set the Environment Variable:  
-The recommended and most secure way to provide the key is by setting the OPENAI_API_KEY environment variable. PacketLLM will automatically detect and use it.
-
-Add the following line to your user-level or project-level .Renviron file:
-
-```sh
-OPENAI_API_KEY='your_secret_api_key_here'
+```r
+usethis::edit_r_environ()
 ```
 
-Use `usethis::edit_r_environ()` to easily open your .Renviron file.
+Then add the line:
 
-Important: After editing .Renviron, restart your R session for the changes to take effect. Never hardcode your API key directly into scripts or share it publicly.
+```sh
+OPENAI_API_KEY='your_key_here'
+```
 
-Basic Usage
+Restart R. Never hardcode keys in scripts or commit them to a repository.
 
-Once installed and configured with your API key, simply load the library and run the main function in your RStudio console:
+---
+
+## Usage
+
+Launch from the RStudio Addins menu under **PacketLLM**, or from the console:
 
 ```r
 library(PacketLLM)
-
-# Launch the PacketLLM Chat Gadget
 run_llm_chat_app()
 ```
 
+The gadget opens in the Viewer pane. Select some code in the editor, switch back to the gadget, and the context status label confirms what was captured. Type a question and press **Send**.
+
+### Typical workflow
+
+1. Select a function in the editor.
+2. Open PacketLLM (Addins menu or `run_llm_chat_app()`).
+3. Ask a question. No need to paste the code; it is already in context.
+4. Click **Replace** on a suggested code block to preview and apply the change directly to the editor.
+
+### Multiple conversations
+
+Use **New chat** to open a separate tab. Each tab has its own context mode, model, attached files, and history. Close tabs with the **x** on the tab; the last tab cannot be closed.
+
+---
+
+## Package API
+
+The public API exposes the history manager and key helpers for scripting and testing:
+
+```r
+# Conversation lifecycle
+initialize_history_manager(persist = TRUE)
+create_new_conversation()
+delete_conversation(id)
+reset_history_manager()
+
+# History
+add_message_to_active_history(role, content)
+get_active_chat_history()
+get_conversation_history(id)
+
+# Settings
+set_conversation_model(id, model_name)
+set_conversation_system_message(id, message)
+
+# Context
+capture_rstudio_context(mode = "auto")
+
+# Files
+read_file_content(file_path)
+parse_pages(pages_str)
+```
+
+---
+
+## Requirements
+
+- R >= 4.1.0
+- RStudio (for editor-aware features; the gadget runs outside RStudio with reduced functionality)
+- An API key set as `OPENAI_API_KEY`
+
+**Imports:** `future`, `httr`, `pdftools`, `promises`, `readtext`, `rstudioapi`, `shiny`, `shinyjs`
+
+---
+
+## License
+
+MIT. See `LICENSE` for details.

@@ -1,14 +1,14 @@
-#' Run the LLM Chat Application in RStudio Window
+#' Run the PacketLLM gadget
 #'
-#' Launches the Shiny application as a Gadget in the RStudio Viewer pane
-#' (or a separate window). Interacts with LLM models, managing conversations,
-#' attachments, and settings, without blocking the R console when opened in a new window.
+#' Launches PacketLLM as an RStudio/Shiny gadget. The gadget can use RStudio
+#' editor context when available, while still running outside RStudio with
+#' reduced functionality.
 #'
 #' @export
 #' @return Value passed to shiny::stopApp() (typically NULL).
 #' @import shiny
-#' @importFrom shinyjs useShinyjs runjs enable disable show hide
 #' @import future promises httr pdftools readtext tools
+#' @importFrom shinyjs useShinyjs runjs enable disable
 #' @importFrom utils tail head
 #' @importFrom stats setNames
 #' @examples
@@ -16,122 +16,101 @@
 #' run_llm_chat_app()
 #' }
 run_llm_chat_app <- function() {
-
-  # Verbose flag
-  .is_verbose <- function() getOption("PacketLLM.verbose", default = FALSE)
-
-  # UI
   ui <- fluidPage(
-    title = "LLM Chat",
+    title = "PacketLLM",
     useShinyjs(),
     tags$head(
-      tags$script(HTML("
-        function sendClickToServer(inputId, convId) {
-          Shiny.setInputValue(inputId, { convId: convId, timestamp: Date.now() }, { priority: 'event' });
-        }
-        $(document).on('click', '.send-btn-class', function() {
-          var convId = $(this).data('conv-id');
-          sendClickToServer('dynamic_send_click', convId);
-        });
-        $(document).on('click', '.add-file-btn-class', function() {
-          if ($(this).is(':disabled')) return;
-          var convId = $(this).data('conv-id');
-          Shiny.setInputValue('dynamic_add_file_click', { convId: convId, timestamp: Date.now() }, { priority: 'event' });
-          $('#hidden_file_input').val(null).click();
-        });
-        $(document).on('shiny:connected', function() {
-          Shiny.addCustomMessageHandler('resetFileInput', function(message) {
-            var el = $('#' + message.id);
-            if (el.length > 0) el.val(null);
-          });
-        });
-      ")),
-      # CSS (increase heights to reduce white space on large windows)
-      tags$style(HTML("
-        body { padding-top: 50px; font-family: sans-serif; }
-        .navbar.navbar-default.navbar-fixed-top { border-width: 0 0 1px; min-height: 40px; margin-bottom: 10px; background-color: #ffffff; border-color: #ddd; padding-left: 0; padding-right: 0; }
-        .navbar.navbar-default.navbar-fixed-top .container-fluid { display: flex !important; align-items: center !important; flex-wrap: wrap !important; padding-left: 15px !important; padding-right: 15px !important; width: 100%; box-sizing: border-box; }
-        .navbar.navbar-default.navbar-fixed-top .navbar-header { float: none !important; flex-shrink: 0 !important; margin: 0 !important; padding: 0 !important; margin-right: 15px !important; }
-        .navbar.navbar-default.navbar-fixed-top .navbar-brand { padding-left: 0 !important; padding-right: 0 !important; padding-top: 10px !important; padding-bottom: 10px !important; margin: 0 !important; height: auto !important; font-size: 16px !important; line-height: 20px; display: block !important; }
-        .navbar.navbar-default.navbar-fixed-top .navbar-right { float: none !important; flex-shrink: 0 !important; margin: 0 !important; padding: 0 !important; margin-left: auto !important; display: flex !important; align-items: center !important; }
-        .navbar.navbar-default.navbar-fixed-top .navbar-right .btn { margin-left: 5px !important; margin-top: 0 !important; margin-bottom: 0 !important; }
-        #hidden_file_input { display: none; }
-        .close-tab-btn { font-size: 10px; line-height: 1; vertical-align: middle; margin-top: -2px; margin-left: 6px; padding: 1px 4px; }
-        .nav-tabs > li > a { padding: 8px 10px; }
-        .nav-tabs > li > a .close-tab-btn { visibility: hidden; }
-        .nav-tabs > li:hover > a .close-tab-btn { visibility: visible; }
-        .nav-tabs > li.active > a .close-tab-btn { visibility: visible; }
-        .btn.disabled, .btn[disabled] { cursor: not-allowed; opacity: 0.65; }
-        .tab-content > .tab-pane { padding: 15px; border: 1px solid #ddd; border-top: none; min-height: 70vh; }
-        .chat-history-container-class { height: 65vh; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9; }
-        .input-action-row { display: flex; align-items: stretch; gap: 10px; }
-        .input-action-row .add-file-btn-class { flex-shrink: 0; height: 56px; width: 56px; font-size: 24px; padding: 0; line-height: 56px; text-align: center; }
-        .input-action-row .attachments-container { flex-shrink: 0; flex-basis: 200px; min-width: 100px; max-width: 30%; min-height: 56px; max-height: 80px; overflow-y: auto; border: 1px dashed #ddd; padding: 5px; background-color: #fff; align-self: center; box-sizing: border-box; }
-        .input-action-row textarea.form-control { flex-grow: 1; height: 56px; resize: none; margin: 0; box-sizing: border-box; }
-        .input-action-row .send-btn-class { flex-shrink: 0; height: 56px; }
-        .attachments-input-row, .message-input-row { display: none !important; }
-        .message-input-col, .send-button-col { display: none !important; }
-        .form-group { margin-bottom: 0px; }
-      "))
+      packetllm_client_script(),
+      packetllm_styles()
     ),
-    tags$nav(
-      class = "navbar navbar-default navbar-fixed-top",
-      tags$div(
-        class = "container-fluid",
-        tags$div(class = "navbar-header", tags$span(class = "navbar-brand", "LLM Chat")),
+    tags$div(
+      class = "packet-shell",
+      tags$header(
+        class = "packet-topbar",
         tags$div(
-          class = "navbar-right",
-          actionButton("advanced_settings_btn", "Settings", class = "btn-default btn-sm"),
-          actionButton("new_chat_btn", "New Conversation", class = "btn-primary btn-sm"),
-          actionButton("close_app_btn", "X", class = "btn btn-danger btn-sm")
+          tags$div(class = "packet-brand", "PacketLLM"),
+          tags$div(class = "packet-subtitle", "AI assistant for RStudio")
+        ),
+        tags$div(
+          class = "packet-topbar-actions",
+          actionButton("help_btn", "Help", class = "packet-topbar-btn", title = "How PacketLLM works"),
+          actionButton("advanced_settings_btn", "Settings", class = "packet-topbar-btn"),
+          actionButton("new_chat_btn", "New chat", class = "packet-topbar-btn packet-topbar-primary"),
+          actionButton("close_app_btn", "Close", class = "packet-topbar-btn")
         )
-      )
-    ),
-    div(style = "padding-left: 15px; padding-right: 15px;",
+      ),
+      tags$main(
+        class = "packet-main",
         tabsetPanel(id = "chatTabs", type = "tabs")
+      )
     ),
     tags$div(style = "display: none;", fileInput("hidden_file_input", NULL, multiple = TRUE))
   )
 
-  # Server
   server <- function(input, output, session) {
-
-    initial_conv_id <- initialize_history_manager()
+    initial_conv_id <- initialize_history_manager(persist = TRUE)
     active_conv_id_rv <- reactiveVal(NULL)
     open_tab_ids_rv <- reactiveVal(character(0))
     first_tab_created <- reactiveVal(FALSE)
     processing_state <- reactiveValues()
     file_upload_context_rv <- reactiveVal(NULL)
     staged_attachments_rv <- reactiveVal(list())
+    context_state_rv <- reactiveVal(list())
+    pending_replace_rv <- reactiveVal(NULL)
+    context_poll_timer <- reactiveTimer(1000, session)
 
-    # UI helpers
-    create_and_append_new_tab <- function(conv_id, select_tab = TRUE) {
-      conv_title <- get_conversation_title(conv_id) %||% paste("ID:", conv_id)
-      processing_state[[conv_id]] <- FALSE
-      current_staged <- staged_attachments_rv(); current_staged[[conv_id]] <- list(); staged_attachments_rv(current_staged)
-      tab_content <- tryCatch(create_tab_content_ui(conv_id), error = function(e) {
-        shiny::tagList(shiny::h4("Error loading UI for conversation"), shiny::verbatimTextOutput(paste0("error_ui_", conv_id)))
-        output[[paste0("error_ui_", conv_id)]] <- shiny::renderPrint(e)
+    get_context_for_tab <- function(conv_id) {
+      context_state_rv()[[conv_id]]
+    }
+
+    set_context_for_tab <- function(conv_id, context) {
+      current <- context_state_rv()
+      current[[conv_id]] <- context
+      context_state_rv(current)
+    }
+
+    render_context_status <- function(conv_id) {
+      ns <- NS(conv_id)
+      output[[ns("context_status_output")]] <- renderUI({
+        context <- get_context_for_tab(conv_id)
+        label <- if (is.null(context)) "Context not loaded" else context$label
+        tags$span(
+          class = if (!is.null(context) && isTRUE(context$available)) "packet-context-ok" else "packet-context-muted",
+          label
+        )
       })
-      insertTab(
-        inputId = "chatTabs",
-        tabPanel(
-          title = span(conv_title, actionButton(paste0("close_tab_", conv_id), "x",
-                                                class = "btn-xs btn-danger close-tab-btn",
-                                                onclick = sprintf("event.stopPropagation(); Shiny.setInputValue('close_tab_request', '%s', {priority: 'event'})", conv_id))),
-          value = conv_id,
-          tab_content
-        ),
-        select = select_tab
+    }
+
+    render_chat_for_tab <- function(conv_id) {
+      ns <- NS(conv_id)
+      output[[ns("chat_history_output")]] <- render_chat_history_ui(
+        get_conversation_history(conv_id) %||% list(),
+        conv_id = conv_id,
+        context = get_context_for_tab(conv_id)
       )
-      open_tab_ids_rv(c(open_tab_ids_rv(), conv_id))
-      input_id <- NS(conv_id)("user_message_input")
-      observeEvent(input[[input_id]], {
-        if (conv_id %in% open_tab_ids_rv()) {
-          active_id <- active_conv_id_rv()
-          if (!is.null(active_id) && active_id == conv_id) update_send_button_state(conv_id)
-        }
-      }, ignoreNULL = FALSE, ignoreInit = TRUE, once = FALSE, autoDestroy = TRUE)
+    }
+
+    capture_context_for_tab <- function(conv_id, force = FALSE, save_mode = TRUE) {
+      ns <- NS(conv_id)
+      mode <- isolate(input[[ns("context_mode")]]) %||% get_conversation_data(conv_id)$context_mode %||% "auto"
+      context <- capture_rstudio_context(mode = mode)
+      old_context <- get_context_for_tab(conv_id)
+      if (!isTRUE(force) && identical(context_signature(context), context_signature(old_context))) {
+        return(invisible(old_context))
+      }
+      set_context_for_tab(conv_id, context)
+      if (isTRUE(save_mode)) {
+        set_conversation_generation_settings(conv_id, context_mode = mode)
+      }
+      render_context_status(conv_id)
+      render_chat_for_tab(conv_id)
+      invisible(context)
+    }
+
+    update_send_button_state <- function(conv_id) {
+      if (!conv_id %in% open_tab_ids_rv()) return()
+      selector <- paste0("#", NS(conv_id)("send_query_btn"))
+      if (can_send_message(conv_id)) shinyjs::enable(selector = selector) else shinyjs::disable(selector = selector)
     }
 
     can_send_message <- function(conv_id) {
@@ -141,85 +120,99 @@ run_llm_chat_app <- function() {
       input_val <- isolate(input[[input_id]])
       has_text <- nzchar(trimws(input_val %||% ""))
       has_staged_files <- length(isolate(staged_attachments_rv()[[conv_id]]) %||% list()) > 0
-      conv_model <- get_conversation_model(conv_id)
-      if (is.null(conv_model)) { warning(paste("No model found for conversation ID:", conv_id, "in can_send_message.")); return(FALSE) }
-      if (conv_model %in% simplified_models_list) {
-        return(has_text)
-      } else {
-        return(has_text || has_staged_files)
-      }
+      has_text || has_staged_files
     }
 
-    update_send_button_state <- function(conv_id) {
-      req(conv_id)
-      if (conv_id %in% open_tab_ids_rv()) {
-        button_id_selector <- paste0("#", NS(conv_id)("send_query_btn"))
-        if (can_send_message(conv_id)) shinyjs::enable(selector = button_id_selector) else shinyjs::disable(selector = button_id_selector)
-      }
+    create_and_append_new_tab <- function(conv_id, select_tab = TRUE) {
+      conv_title <- get_conversation_title(conv_id) %||% "Conversation"
+      processing_state[[conv_id]] <- FALSE
+      current_staged <- staged_attachments_rv()
+      current_staged[[conv_id]] <- list()
+      staged_attachments_rv(current_staged)
+
+      insertTab(
+        inputId = "chatTabs",
+        tabPanel(
+          title = span(
+            conv_title,
+            actionButton(
+              paste0("close_tab_", conv_id),
+              "x",
+              class = "packet-close-tab",
+              onclick = sprintf("event.stopPropagation(); Shiny.setInputValue('close_tab_request', '%s', {priority: 'event'})", conv_id)
+            )
+          ),
+          value = conv_id,
+          create_tab_content_ui(conv_id)
+        ),
+        select = select_tab
+      )
+      open_tab_ids_rv(c(open_tab_ids_rv(), conv_id))
+
+      ns <- NS(conv_id)
+      output[[ns("staged_files_list_output")]] <- render_staged_attachments_list_ui(list())
+      render_context_status(conv_id)
+      render_chat_for_tab(conv_id)
+      capture_context_for_tab(conv_id, force = TRUE, save_mode = FALSE)
+      update_send_button_state(conv_id)
+
+      observeEvent(input[[ns("user_message_input")]], {
+        update_send_button_state(conv_id)
+      }, ignoreNULL = FALSE, ignoreInit = TRUE, autoDestroy = TRUE)
+
+      observeEvent(input[[ns("context_mode")]], {
+        capture_context_for_tab(conv_id, force = TRUE, save_mode = TRUE)
+      }, ignoreNULL = FALSE, ignoreInit = TRUE, autoDestroy = TRUE)
     }
 
-    update_add_file_button_state <- function(conv_id) {
-      req(conv_id)
-      current_model <- get_conversation_model(conv_id)
-      if (is.null(current_model)) return()
-      button_id_selector <- paste0("#", NS(conv_id)("add_file_btn"))
-      if (current_model %in% simplified_models_list) shinyjs::disable(selector = button_id_selector) else shinyjs::enable(selector = button_id_selector)
-    }
+    observe({
+      context_poll_timer()
+      if (!isTRUE(first_tab_created())) return()
+      active_id <- active_conv_id_rv()
+      if (is.null(active_id) || !active_id %in% open_tab_ids_rv()) return()
+      if (isTRUE(processing_state[[active_id]])) return()
+      capture_context_for_tab(active_id, force = FALSE, save_mode = FALSE)
+    })
 
-    # First tab
     observeEvent(TRUE, {
       req(!first_tab_created())
-      create_and_append_new_tab(initial_conv_id, select_tab = TRUE)
+      conversation_ids <- get_all_conversation_ids()
+      if (length(conversation_ids) == 0) {
+        conversation_ids <- initialize_history_manager(persist = TRUE)
+      }
+      for (conv_id in conversation_ids) {
+        create_and_append_new_tab(conv_id, select_tab = identical(conv_id, initial_conv_id))
+      }
       first_tab_created(TRUE)
       set_active_conversation(initial_conv_id)
       active_conv_id_rv(initial_conv_id)
-      ns <- NS(initial_conv_id)
-      output[[ns("chat_history_output")]] <- render_chat_history_ui(get_active_chat_history())
-      output[[ns("staged_files_list_output")]] <- render_staged_attachments_list_ui(list())
-      update_send_button_state(initial_conv_id)
-      update_add_file_button_state(initial_conv_id)
+      if (!onboarding_seen()) {
+        showModal(packetllm_help_modal())
+        mark_onboarding_seen()
+      }
     }, once = TRUE, ignoreInit = FALSE)
 
-    # Active tab change
+    observeEvent(input$help_btn, {
+      showModal(packetllm_help_modal())
+    })
+
     observeEvent(input$chatTabs, {
       req(first_tab_created(), input$chatTabs)
       current_tab_id <- input$chatTabs
-      if (current_tab_id %in% open_tab_ids_rv() && (is.null(active_conv_id_rv()) || current_tab_id != active_conv_id_rv())) {
+      if (current_tab_id %in% open_tab_ids_rv()) {
         set_active_conversation(current_tab_id)
         active_conv_id_rv(current_tab_id)
-        active_history <- get_conversation_history(current_tab_id)
-        staged_files_for_tab <- isolate(staged_attachments_rv()[[current_tab_id]]) %||% list()
-        if (is.null(active_history)) {
-          if (!current_tab_id %in% get_all_conversation_ids()) {
-            warning(paste("No data for conversation", current_tab_id, "- likely deleted."))
-            return()
-          }
-          active_history <- list()
-        }
-        ns <- NS(current_tab_id)
-        output[[ns("chat_history_output")]] <- render_chat_history_ui(active_history)
-        output[[ns("staged_files_list_output")]] <- render_staged_attachments_list_ui(staged_files_for_tab)
-        session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input"))
+        render_chat_for_tab(current_tab_id)
         update_send_button_state(current_tab_id)
-        update_add_file_button_state(current_tab_id)
-      } else if (!current_tab_id %in% open_tab_ids_rv() && length(open_tab_ids_rv()) > 0) {
-        warning(paste("Selected tab", current_tab_id, "is no longer open. Switching to the first available."))
-        first_available_tab <- open_tab_ids_rv()[1]
-        if (!is.null(first_available_tab)) updateTabsetPanel(session, "chatTabs", selected = first_available_tab) else { active_conv_id_rv(NULL); set_active_conversation(NULL) }
-      } else if (length(open_tab_ids_rv()) == 0) {
-        active_conv_id_rv(NULL)
-        set_active_conversation(NULL)
       }
     }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-    # New Conversation
     observeEvent(input$new_chat_btn, {
       new_id <- create_new_conversation(activate = FALSE, add_initial_settings = TRUE)
       create_and_append_new_tab(new_id, select_tab = TRUE)
-      showNotification("Started a new conversation in a new tab.", type = "message", duration = 3)
+      showNotification("Started a new chat.", type = "message", duration = 2)
     })
 
-    # Send Query
     observeEvent(input$dynamic_send_click, {
       req(input$dynamic_send_click)
       conv_id <- input$dynamic_send_click$convId
@@ -232,342 +225,840 @@ run_llm_chat_app <- function() {
       input_id <- NS(conv_id)("user_message_input")
       user_text <- trimws(isolate(input[[input_id]]) %||% "")
       staged_files_to_send <- isolate(staged_attachments_rv()[[conv_id]]) %||% list()
+      final_content <- build_user_message_content(user_text, staged_files_to_send)
 
-      final_content <- user_text
-      if (length(staged_files_to_send) > 0) {
-        attachment_list_str <- paste("-", staged_files_to_send, collapse = "\n")
-        if (nzchar(final_content)) {
-          final_content <- paste0(final_content, "\n\n<strong>Attached:</strong>\n", attachment_list_str)
-        } else {
-          final_content <- paste0("<strong>Attached:</strong>\n", attachment_list_str)
-        }
-      }
-
-      add_error <- FALSE
-      original_active_conv_id_before_add <- get_active_conversation_id()
+      original_active <- get_active_conversation_id()
       set_active_conversation(conv_id)
-
-      if (nzchar(trimws(final_content))) {
-        tryCatch({
-          add_result <- add_message_to_active_history(role = "user", content = final_content)
-          if (is.list(add_result) && !is.null(add_result$type) && add_result$type == "error") stop(add_result$message)
-        }, error = function(e) {
-          showNotification(paste("Error adding message:", e$message), type = "error", duration = 5)
-          message(paste("Error in add_message_to_active_history:", e$message))
-          set_active_conversation(original_active_conv_id_before_add)
-          processing_state[[conv_id]] <- FALSE
-          update_send_button_state(conv_id)
-          add_error <<- TRUE
-        })
-        if (add_error) return()
-
-        # Cleanup after send
-        updateTextAreaInput(session, input_id, value = "")
-        current_staged <- staged_attachments_rv(); current_staged[[conv_id]] <- list(); staged_attachments_rv(current_staged)
-        ns_render <- NS(conv_id)
-        output[[ns_render("staged_files_list_output")]] <- render_staged_attachments_list_ui(list())
-
-        # Update tab title if set
-        if (exists("add_result")) {
-          if (is.list(add_result) && !is.null(add_result$type) && add_result$type == "title_set") {
-            final_title <- add_result$new_title %||% "Conversation..."
-            escaped_title <- gsub("'", "\\'", gsub("\"", "\\\"", final_title))
-            shinyjs::runjs(sprintf("$('#chatTabs a[data-value=\"%s\"] > span').contents().filter(function(){ return this.nodeType == 3; }).first().replaceWith('%s');", conv_id, escaped_title))
-          }
-        }
-      } else {
-        set_active_conversation(original_active_conv_id_before_add)
+      add_result <- add_message_to_active_history(role = "user", content = final_content)
+      if (is.list(add_result) && identical(add_result$type, "error")) {
         processing_state[[conv_id]] <- FALSE
         update_send_button_state(conv_id)
+        set_active_conversation(original_active)
+        showNotification(add_result$message, type = "error", duration = 5)
         return()
       }
 
-      ns_render <- NS(conv_id)
-      if (!conv_id %in% get_all_conversation_ids()) {
-        message(paste("Conversation", conv_id, "disappeared after adding message. Aborting."))
-        set_active_conversation(original_active_conv_id_before_add)
-        processing_state[[conv_id]] <- FALSE
-        update_send_button_state(conv_id)
-        return()
-      }
-      current_history <- get_conversation_history(conv_id) %||% list()
-      output[[ns_render("chat_history_output")]] <- render_chat_history_ui(current_history)
+      updateTextAreaInput(session, input_id, value = "")
+      current_staged <- staged_attachments_rv()
+      current_staged[[conv_id]] <- list()
+      staged_attachments_rv(current_staged)
+      output[[NS(conv_id)("staged_files_list_output")]] <- render_staged_attachments_list_ui(list())
+      render_chat_for_tab(conv_id)
+      update_tab_title_if_needed(conv_id, add_result)
 
-      chat_history_container_selector <- ".chat-history-container-class"
-      if (isolate(active_conv_id_rv()) == conv_id) {
-        js_code <- sprintf(
-          "var activeTabPane = $('#chatTabs .tab-pane.active'); var el = activeTabPane.find('%s'); if (el.length > 0 && el.is(':visible')) { setTimeout(function() { el.scrollTop(el[0].scrollHeight); }, 100); }",
-          chat_history_container_selector
-        )
-        shinyjs::runjs(js_code)
-      }
-
+      request_snapshot <- get_conversation_data(conv_id)
+      request_context <- get_context_for_tab(conv_id)
       notification_id <- paste0("api_call_indicator_", conv_id)
-      showNotification("Processing request...", id = notification_id, duration = NULL, type = "message")
-      request_conv_id_main <- conv_id
+      showNotification("Thinking...", id = notification_id, duration = NULL, type = "message")
+
       future({
-        set_active_conversation(request_conv_id_main)
-        if (!request_conv_id_main %in% get_all_conversation_ids()) stop("Conversation was deleted.")
-        response_text <- tryCatch(get_assistant_response(), error = function(e) paste("API Error:", e$message))
-        list(response = response_text, conv_id = request_conv_id_main)
+        prepared <- prepare_api_messages(
+          conversation_history = request_snapshot$history %||% list(),
+          attachments = request_snapshot$attachments %||% list(),
+          conversation_system_message = request_snapshot$system_message %||% "",
+          conversation_model = request_snapshot$model,
+          context = request_context,
+          assistant_behavior = request_snapshot$assistant_behavior %||% "default",
+          custom_instruction = request_snapshot$custom_instruction %||% "",
+          verbose = getOption("PacketLLM.verbose", default = FALSE)
+        )
+        response_text <- call_openai_chat(
+          prepared$messages,
+          model = request_snapshot$model,
+          reasoning_effort = request_snapshot$reasoning_effort %||% "medium",
+          verbosity = request_snapshot$verbosity %||% "low",
+          max_output_tokens = request_snapshot$max_output_tokens %||% NA_integer_
+        )
+        list(response = response_text, conv_id = conv_id)
       }) %...>% (function(result) {
         response_conv_id <- result$conv_id
-        assistant_response_content <- result$response
-        if (!response_conv_id %in% open_tab_ids_rv()) {
-          removeNotification(paste0("api_call_indicator_", response_conv_id))
-          processing_state[[response_conv_id]] <- FALSE
-          return()
-        }
+        removeNotification(paste0("api_call_indicator_", response_conv_id))
         processing_state[[response_conv_id]] <- FALSE
         update_send_button_state(response_conv_id)
-        if (!response_conv_id %in% get_all_conversation_ids()) {
-          removeNotification(paste0("api_call_indicator_", response_conv_id))
-          return()
-        }
-        ns_resp <- NS(response_conv_id)
-        updated_history <- get_conversation_history(response_conv_id) %||% list()
-        output[[ns_resp("chat_history_output")]] <- render_chat_history_ui(updated_history)
-        if (isolate(active_conv_id_rv()) == response_conv_id) {
-          js_code <- sprintf(
-            "var activeTabPane = $('#chatTabs .tab-pane.active'); var el = activeTabPane.find('%s'); if (el.length > 0 && el.is(':visible')) { setTimeout(function() { el.scrollTop(el[0].scrollHeight); }, 100); }",
-            chat_history_container_selector
-          )
-          shinyjs::runjs(js_code)
-        }
-        removeNotification(paste0("api_call_indicator_", response_conv_id))
-        conv_title_for_notif <- get_conversation_title(response_conv_id) %||% response_conv_id
-        if (is.character(assistant_response_content) && grepl("^(Error|API Error|Future execution error)", assistant_response_content, ignore.case = TRUE)) {
-          showNotification(paste("Processing error for:", conv_title_for_notif), type = "error", duration = 5)
-        } else {
-          showNotification(paste("Received response for:", conv_title_for_notif), type = "message", duration = 3)
-        }
+
+        if (!response_conv_id %in% get_all_conversation_ids()) return()
+        set_active_conversation(response_conv_id)
+        response_text <- result$response %||% "No response text was returned."
+        add_message_to_active_history(role = "assistant", content = response_text)
+        render_chat_for_tab(response_conv_id)
+        scroll_active_chat()
+        showNotification("Response received.", type = "message", duration = 2)
       }) %...!% (function(error) {
-        error_conv_id_main <- request_conv_id_main
-        message(paste("Future error:", error$message))
-        if (!error_conv_id_main %in% open_tab_ids_rv()) {
-          removeNotification(paste0("api_call_indicator_", error_conv_id_main))
-          processing_state[[error_conv_id_main]] <- FALSE
-          return()
-        }
-        processing_state[[error_conv_id_main]] <- FALSE
-        update_send_button_state(error_conv_id_main)
-        removeNotification(paste0("api_call_indicator_", error_conv_id_main))
-        showNotification(paste("Asynchronous error:", error$message), type = "error", duration = 10)
-        tryCatch({
-          set_active_conversation(error_conv_id_main)
-          if (error_conv_id_main %in% get_all_conversation_ids()) {
-            add_message_to_active_history(role = "system", content = paste("Future execution error:", error$message))
-            ns_err <- NS(error_conv_id_main)
-            err_history <- get_conversation_history(error_conv_id_main) %||% list()
-            output[[ns_err("chat_history_output")]] <- render_chat_history_ui(err_history)
-            if (isolate(active_conv_id_rv()) == error_conv_id_main) {
-              js_code <- sprintf(
-                "var activeTabPane = $('#chatTabs .tab-pane.active'); var el = activeTabPane.find('%s'); if (el.length > 0 && el.is(':visible')) { setTimeout(function() { el.scrollTop(el[0].scrollHeight); }, 100); }",
-                chat_history_container_selector
-              )
-              shinyjs::runjs(js_code)
-            }
-          }
-        }, error = function(e2) { warning(paste("Failed to save future error:", e2$message)) })
+        removeNotification(notification_id)
+        processing_state[[conv_id]] <- FALSE
+        update_send_button_state(conv_id)
+        set_active_conversation(conv_id)
+        add_message_to_active_history(role = "system", content = paste("API Error:", error$message))
+        render_chat_for_tab(conv_id)
+        showNotification(paste("API error:", error$message), type = "error", duration = 8)
       })
 
-      set_active_conversation(original_active_conv_id_before_add)
+      set_active_conversation(original_active)
       NULL
     })
 
-    # Add File
     observeEvent(input$dynamic_add_file_click, {
       req(input$dynamic_add_file_click)
       conv_id <- input$dynamic_add_file_click$convId
       req(conv_id %in% open_tab_ids_rv())
-      current_model <- get_conversation_model(conv_id)
-      if (is.null(current_model)) return()
-      if (current_model %in% simplified_models_list) { showNotification(paste("Model", current_model, "does not support attachments."), type = "warning", duration = 4); return() }
-      if (isTRUE(processing_state[[conv_id]])) { showNotification("Please wait for the current response to complete.", type = "warning", duration = 4); return() }
+      if (isTRUE(processing_state[[conv_id]])) {
+        showNotification("Please wait for the current response.", type = "warning", duration = 3)
+        return()
+      }
       file_upload_context_rv(conv_id)
     })
 
-    # Process selected files
     observeEvent(input$hidden_file_input, {
-      conv_id_for_upload <- isolate(file_upload_context_rv())
+      conv_id <- isolate(file_upload_context_rv())
       file_upload_context_rv(NULL)
-      req(conv_id_for_upload, conv_id_for_upload %in% open_tab_ids_rv(), input$hidden_file_input)
+      req(conv_id, conv_id %in% open_tab_ids_rv(), input$hidden_file_input)
 
-      current_model <- get_conversation_model(conv_id_for_upload)
-      if (is.null(current_model)) return()
-      if (current_model %in% simplified_models_list) { warning("Attempting to process file for a simplified model."); session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input")); return() }
-      if (isTRUE(processing_state[[conv_id_for_upload]])) return()
+      original_active <- get_active_conversation_id()
+      set_active_conversation(conv_id)
+      files_info <- input$hidden_file_input
+      added <- character(0)
+      failed <- 0
 
-      files_info_from_input <- input$hidden_file_input
-      files_added_to_staging_success <- 0
-      files_failed <- 0
-      newly_staged_filenames <- character(0)
-
-      original_active_conv_before_upload <- get_active_conversation_id()
-      tryCatch({
-        set_active_conversation(conv_id_for_upload)
-
-        for (i in seq_len(nrow(files_info_from_input))) {
-          file_info <- files_info_from_input[i, ]
-          file_name <- file_info$name
-          file_path <- file_info$datapath
-
-          file_content <- tryCatch(read_file_content(file_path), error = function(e_read) {
-            warning(paste("Error reading", file_name, ":", e_read$message))
-            showNotification(paste("Error reading", file_name), type = "error", duration = 5)
-            return(NULL)
-          })
-
-          if (!is.null(file_content)) {
-            added_persistently <- add_attachment_to_active_conversation(name = file_name, content = file_content)
-            if (added_persistently) {
-              newly_staged_filenames <- c(newly_staged_filenames, file_name)
-              files_added_to_staging_success <- files_added_to_staging_success + 1
-            } else {
-              files_failed <- files_failed + 1
-              showNotification(paste("File", file_name, "already exists or could not be added."), type = "warning", duration = 4)
-            }
-          } else {
-            files_failed <- files_failed + 1
-          }
+      for (i in seq_len(nrow(files_info))) {
+        file_info <- files_info[i, ]
+        file_content <- tryCatch(read_file_content(file_info$datapath), error = function(e) {
+          warning("Error reading ", file_info$name, ": ", e$message)
+          NULL
+        })
+        if (!is.null(file_content) && add_attachment_to_active_conversation(file_info$name, file_content)) {
+          added <- c(added, file_info$name)
+        } else {
+          failed <- failed + 1
         }
-
-        if (length(newly_staged_filenames) > 0) {
-          current_staged <- staged_attachments_rv()
-          existing_staged <- current_staged[[conv_id_for_upload]] %||% list()
-          combined_staged <- unique(c(existing_staged, newly_staged_filenames))
-          current_staged[[conv_id_for_upload]] <- combined_staged
-          staged_attachments_rv(current_staged)
-
-          if (conv_id_for_upload %in% get_all_conversation_ids()) {
-            ns_files <- NS(conv_id_for_upload)
-            output[[ns_files("staged_files_list_output")]] <- render_staged_attachments_list_ui(combined_staged)
-            update_send_button_state(conv_id_for_upload)
-          } else {
-            message(paste("Conversation", conv_id_for_upload, "does not exist after processing files."))
-          }
-        }
-
-        conv_title_for_notif <- get_conversation_title(conv_id_for_upload) %||% conv_id_for_upload
-        if (files_added_to_staging_success > 0) showNotification(paste("Added", files_added_to_staging_success, "file(s) to staging for:", conv_title_for_notif), type = "message", duration = 3)
-        if (files_failed > 0) showNotification(paste("Failed to add/read", files_failed, "file(s)."), type = "warning", duration = 5)
-
-      }, error = function(e) {
-        error_msg <- paste("Error processing files:", e$message)
-        warning(error_msg)
-        message(error_msg)
-        showNotification(error_msg, type = "error", duration = 8)
-      }, finally = {
-        update_send_button_state(conv_id_for_upload)
-        update_add_file_button_state(conv_id_for_upload)
-        set_active_conversation(original_active_conv_before_upload)
-        session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input"))
-      })
-      NULL
-    }, ignoreNULL = TRUE, ignoreInit = TRUE)
-
-    # Close tab
-    observeEvent(input$close_tab_request, {
-      req(input$close_tab_request)
-      tab_id_to_close <- input$close_tab_request
-      if (!tab_id_to_close %in% open_tab_ids_rv()) return()
-      open_tabs <- open_tab_ids_rv()
-      if (length(open_tabs) <= 1) { showNotification("Cannot close the last tab.", type = "warning", duration = 3); return() }
-
-      processing_state[[tab_id_to_close]] <- NULL
-      current_staged <- staged_attachments_rv(); current_staged[[tab_id_to_close]] <- NULL; staged_attachments_rv(current_staged)
-
-      open_tab_ids_rv(setdiff(open_tabs, tab_id_to_close))
-      removeTab(inputId = "chatTabs", target = tab_id_to_close)
-      delete_conversation(tab_id_to_close)
-
-      current_active_id <- active_conv_id_rv()
-      if (!is.null(current_active_id) && current_active_id == tab_id_to_close) {
-        active_conv_id_rv(NULL)
-        remaining_tabs <- open_tab_ids_rv()
-        if (length(remaining_tabs) == 0) set_active_conversation(NULL)
       }
+
+      if (length(added) > 0) {
+        current_staged <- staged_attachments_rv()
+        current_staged[[conv_id]] <- unique(c(current_staged[[conv_id]] %||% list(), added))
+        staged_attachments_rv(current_staged)
+        output[[NS(conv_id)("staged_files_list_output")]] <- render_staged_attachments_list_ui(current_staged[[conv_id]])
+        update_send_button_state(conv_id)
+        showNotification(paste("Attached", length(added), "file(s)."), type = "message", duration = 2)
+      }
+      if (failed > 0) {
+        showNotification(paste("Could not attach", failed, "file(s)."), type = "warning", duration = 4)
+      }
+      set_active_conversation(original_active)
+      session$sendCustomMessage(type = "resetFileInput", message = list(id = "hidden_file_input"))
     }, ignoreNULL = TRUE, ignoreInit = TRUE)
 
-    # Settings modal
+    observeEvent(input$packet_response_action, {
+      action <- input$packet_response_action
+      conv_id <- action$convId
+      text <- action$text %||% ""
+      req(conv_id, conv_id %in% open_tab_ids_rv(), nzchar(text))
+
+      context <- get_context_for_tab(conv_id)
+      if (identical(action$action, "replace")) {
+        validation <- validate_replacement_target(context)
+        if (!isTRUE(validation$ok)) {
+          showNotification(validation$message, type = "warning", duration = 4)
+          return()
+        }
+        pending_replace_rv(list(conv_id = conv_id, text = text, context = context))
+        showModal(replace_preview_modal(text, context))
+        return()
+      }
+
+      result <- switch(
+        action$action,
+        insert = insert_text_into_rstudio(text, context),
+        list(ok = FALSE, message = "Unsupported action.")
+      )
+
+      showNotification(result$message, type = if (isTRUE(result$ok)) "message" else "warning", duration = 4)
+      if (isTRUE(result$ok)) {
+        capture_context_for_tab(conv_id)
+      }
+    }, ignoreInit = TRUE)
+
+    observeEvent(input$confirm_replace_selection, {
+      pending <- pending_replace_rv()
+      req(pending)
+
+      result <- replace_selection_in_rstudio(pending$text, pending$context)
+      removeModal()
+      pending_replace_rv(NULL)
+      showNotification(result$message, type = if (isTRUE(result$ok)) "message" else "warning", duration = 4)
+      if (isTRUE(result$ok) && pending$conv_id %in% open_tab_ids_rv()) {
+        capture_context_for_tab(pending$conv_id)
+      }
+    }, ignoreInit = TRUE)
+
+    observeEvent(input$close_tab_request, {
+      tab_id <- input$close_tab_request
+      if (!tab_id %in% open_tab_ids_rv()) return()
+      open_tabs <- open_tab_ids_rv()
+      if (length(open_tabs) <= 1) {
+        showNotification("Cannot close the last chat.", type = "warning", duration = 3)
+        return()
+      }
+      processing_state[[tab_id]] <- NULL
+      open_tab_ids_rv(setdiff(open_tabs, tab_id))
+      removeTab(inputId = "chatTabs", target = tab_id)
+      delete_conversation(tab_id)
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
     observeEvent(input$advanced_settings_btn, {
-      active_id <- active_conv_id_rv(); req(active_id, active_id %in% get_all_conversation_ids())
+      active_id <- active_conv_id_rv()
+      req(active_id, active_id %in% get_all_conversation_ids())
       current_conv <- get_conversation_data(active_id)
-      if (is.null(current_conv)) { showNotification("Error retrieving conversation data.", type = "error"); return() }
-      current_model <- current_conv$model %||% "gpt-5"
-      current_sys_msg <- current_conv$system_message %||% ""
       model_is_locked <- is_conversation_started(active_id)
 
       showModal(modalDialog(
-        title = paste("Settings for:", current_conv$title %||% active_id),
+        title = paste("Settings:", current_conv$title %||% "Conversation"),
         create_advanced_settings_modal_ui(
-          available_models = available_openai_models,
-          model_value = current_model,
-          sys_msg_value = current_sys_msg
+          model_value = current_conv$model %||% default_model_settings()$model,
+          behavior_value = current_conv$assistant_behavior %||% "default",
+          custom_instruction = current_conv$custom_instruction %||% "",
+          reasoning_value = current_conv$reasoning_effort %||% "medium",
+          verbosity_value = current_conv$verbosity %||% "low",
+          max_output_value = current_conv$max_output_tokens %||% NA_integer_
         ),
-        footer = tagList(modalButton("Cancel"), actionButton("save_advanced_settings", "Save Changes")),
-        easyClose = TRUE, size = "m"
+        footer = tagList(modalButton("Cancel"), actionButton("save_advanced_settings", "Save")),
+        easyClose = TRUE,
+        size = "m"
       ))
 
       observe({
-        selected_model_in_modal <- input$modal_model; req(selected_model_in_modal)
-        model_selector_id <- "modal_model"; model_lock_msg_id <- "model_locked_message"
-        sys_msg_input_id <- "modal_system_message"; sys_msg_msg_id <- "sysmsg_disabled_message"
-        is_simplified <- selected_model_in_modal %in% simplified_models_list
-        if (model_is_locked) { shinyjs::disable(model_selector_id); shinyjs::show(model_lock_msg_id) } else { shinyjs::enable(model_selector_id); shinyjs::hide(model_lock_msg_id) }
-        if (is_simplified) { shinyjs::disable(sys_msg_input_id); shinyjs::show(sys_msg_msg_id) } else { shinyjs::enable(sys_msg_input_id); shinyjs::hide(sys_msg_msg_id) }
+        if (model_is_locked) {
+          shinyjs::disable("modal_model")
+          shinyjs::runjs("$('#model_locked_message').show();")
+        }
+      })
+
+      observe({
+        req(!is.null(input$modal_assistant_behavior))
+        if (identical(input$modal_assistant_behavior, "custom")) {
+          shinyjs::enable("modal_custom_instruction")
+        } else {
+          shinyjs::disable("modal_custom_instruction")
+        }
       })
     })
 
     observeEvent(input$save_advanced_settings, {
-      active_id <- active_conv_id_rv(); req(active_id, active_id %in% get_all_conversation_ids())
-      new_model <- isolate(input$modal_model)
-      new_sys_msg <- isolate(input$modal_system_message)
+      active_id <- active_conv_id_rv()
+      req(active_id, active_id %in% get_all_conversation_ids())
       model_is_locked <- is_conversation_started(active_id)
-      model_saved <- FALSE
-      current_model_for_check <- get_conversation_model(active_id)
 
       if (!model_is_locked) {
-        if (is.null(new_model) || !new_model %in% available_openai_models) { showNotification("Selected model is invalid.", type = "error"); return() }
-        model_saved <- set_conversation_model(active_id, new_model)
-        if (model_saved) {
-          update_add_file_button_state(active_id)
-          current_model_for_check <- new_model
-        } else {
-          showNotification("Could not save model.", type = "warning")
+        selected_model <- isolate(input$modal_model)
+        if (!selected_model %in% available_openai_models || !set_conversation_model(active_id, selected_model)) {
+          showNotification("Could not save the selected model.", type = "error", duration = 4)
+          return()
         }
-      } else {
-        if (!is.null(new_model) && !identical(new_model, current_model_for_check)) warning("Ignoring attempt to change locked model.")
-        model_saved <- TRUE
       }
 
-      if (!model_saved && !model_is_locked) return()
-      sys_msg_saved <- FALSE
-      if (!current_model_for_check %in% simplified_models_list) {
-        if (is.null(new_sys_msg) || !is.character(new_sys_msg) || length(new_sys_msg) != 1) { showNotification("Invalid system message.", type = "error"); return() }
-        sys_msg_saved <- set_conversation_system_message(active_id, new_sys_msg)
-        if (!sys_msg_saved) showNotification("Failed to save system message.", type = "warning")
-      } else {
-        sys_msg_saved <- TRUE
+      ok <- set_conversation_generation_settings(
+        active_id,
+        reasoning_effort = isolate(input$modal_reasoning_effort),
+        verbosity = isolate(input$modal_verbosity),
+        max_output_tokens = isolate(input$modal_max_output_tokens),
+        assistant_behavior = isolate(input$modal_assistant_behavior),
+        custom_instruction = isolate(input$modal_custom_instruction)
+      )
+      if (!ok) {
+        showNotification("Could not save settings.", type = "error", duration = 4)
+        return()
       }
-
-      if ((model_is_locked || model_saved) && sys_msg_saved) {
-        showNotification("Settings have been saved.", type = "message")
-        removeModal(); update_send_button_state(active_id); update_add_file_button_state(active_id)
-      } else {
-        showNotification("An error occurred while saving settings.", type = "error")
-      }
+      removeModal()
+      render_chat_for_tab(active_id)
+      showNotification("Settings saved.", type = "message", duration = 2)
     })
 
-    # Close app
-    observeEvent(input$close_app_btn, { shiny::stopApp() })
+    observeEvent(input$close_app_btn, {
+      save_history_manager()
+      shiny::stopApp()
+    })
+
+    session$onSessionEnded(function() {
+      save_history_manager()
+    })
   }
 
   shiny::runGadget(ui, server, viewer = shiny::paneViewer(minHeight = 600))
 }
 
+#' Launch PacketLLM from the RStudio Addins menu
+#'
+#' @return Value passed to `run_llm_chat_app()`.
+#' @export
+packetllm_addin <- function() {
+  run_llm_chat_app()
+}
 
+build_user_message_content <- function(user_text, staged_files) {
+  if (length(staged_files) == 0) {
+    return(user_text)
+  }
+  attachment_list <- paste0("- ", staged_files, collapse = "\n")
+  if (nzchar(user_text)) {
+    paste0(user_text, "\n\nAttached files:\n", attachment_list)
+  } else {
+    paste0("Attached files:\n", attachment_list)
+  }
+}
 
-#1. devtools::document()
-#2. devtools::load_all()
-#3. run_llm_chat_app()
+update_tab_title_if_needed <- function(conv_id, add_result) {
+  if (!is.list(add_result) || !identical(add_result$type, "title_set")) {
+    return(invisible(NULL))
+  }
+  title <- add_result$new_title %||% "Conversation"
+  escaped_title <- gsub("'", "\\\\'", gsub("\"", "\\\\\"", title))
+  shinyjs::runjs(sprintf(
+    "$('#chatTabs a[data-value=\"%s\"] > span').contents().filter(function(){ return this.nodeType == 3; }).first().replaceWith('%s');",
+    conv_id,
+    escaped_title
+  ))
+  invisible(NULL)
+}
+
+scroll_active_chat <- function() {
+  shinyjs::runjs("
+    var activePane = $('#chatTabs .tab-pane.active');
+    var el = activePane.find('.packet-chat-history');
+    if (el.length > 0) {
+      setTimeout(function() { el.scrollTop(el[0].scrollHeight); }, 80);
+    }
+  ")
+}
+
+packetllm_help_modal <- function() {
+  modalDialog(
+    title = "Getting started with PacketLLM",
+    tags$div(
+      class = "packet-help",
+
+      tags$p(
+        class = "packet-help-intro",
+        "PacketLLM is an AI assistant for RStudio.",
+        "It can see your open file, selected code, and package structure.",
+        "Type a question and press Send. No need to paste code manually."
+      ),
+
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Context"),
+        tags$p("The Context selector controls what PacketLLM includes with your message:"),
+        tags$ul(
+          tags$li(tags$strong("Auto"), " uses your selection if you have one, otherwise the active file, then project metadata."),
+          tags$li(tags$strong("Focused"), " uses only the active selection or file."),
+          tags$li(tags$strong("Project"), " uses the active file plus package DESCRIPTION and the project file list."),
+          tags$li(tags$strong("None"), " sends only your message, no editor content.")
+        ),
+        tags$p(
+          "Context updates automatically as you select text or switch files.",
+          "The status label next to the selector shows what was captured."
+        )
+      ),
+
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Attaching files"),
+        tags$p(
+          "Click", tags$strong("Attach"), "to add a file as context before sending.",
+          "Supported: .R, .pdf, .docx, .txt."
+        ),
+        tags$p(
+          "Attached files are included in every subsequent message in the conversation.",
+          "Useful for error logs or documentation files not open in the editor."
+        )
+      ),
+
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Insert and Replace"),
+        tags$p("Code blocks in responses have Copy, Insert, and Replace buttons."),
+        tags$ul(
+          tags$li(tags$strong("Insert"), " places the code at your cursor in the active editor."),
+          tags$li(
+            tags$strong("Replace"), " swaps your current selection for the suggested code.",
+            " A preview shows both versions before you confirm.",
+            " PacketLLM re-checks that the selection has not changed since it was captured;",
+            " if it has, you are asked to refresh first."
+          )
+        ),
+        tags$p("Both buttons are disabled if no editor context was captured.")
+      ),
+
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Settings"),
+        tags$p("Click", tags$strong("Settings"), "to configure the current conversation:"),
+        tags$ul(
+          tags$li(
+            tags$strong("Model"), " can only be changed before the first message.",
+            " After that it is locked for that conversation."
+          ),
+          tags$li(
+            tags$strong("Behavior"), " presets: Default, Concise, Code-focused, Reviewer, Custom.",
+            " They shape how the assistant responds without changing the model."
+          ),
+          tags$li(
+            tags$strong("Reasoning and Verbosity"), " control how much the model",
+            " thinks and how detailed its output is."
+          )
+        )
+      ),
+
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Multiple conversations"),
+        tags$p(
+          tags$strong("New chat"), "opens a new tab with its own context mode, model, and history.",
+          "Close a tab with the x on the tab. The last tab cannot be closed."
+        )
+      ),
+
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Conversations are saved"),
+        tags$p(
+          "History, settings, and attached file names are saved automatically.",
+          "Close the gadget and reopen it and everything is restored, including across RStudio restarts."
+        )
+      ),
+
+      tags$p(
+        class = "packet-help-foot",
+        "Reopen this guide any time with the Help button."
+      )
+    ),
+    footer = modalButton("Got it"),
+    easyClose = TRUE,
+    size = "l"
+  )
+}
+
+onboarding_marker_path <- function() {
+  override <- getOption("PacketLLM.onboarding_path", default = NULL)
+  if (!is.null(override) && nzchar(override)) {
+    return(override)
+  }
+  data_dir <- tools::R_user_dir("PacketLLM", "data")
+  if (!dir.exists(data_dir)) {
+    dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  file.path(data_dir, "onboarding-seen")
+}
+
+onboarding_seen <- function() {
+  file.exists(onboarding_marker_path())
+}
+
+mark_onboarding_seen <- function() {
+  tryCatch(
+    writeLines(format(Sys.time()), onboarding_marker_path()),
+    error = function(e) NULL
+  )
+  invisible(NULL)
+}
+
+replace_preview_modal <- function(replacement_text, context) {
+  target_label <- if (!is.null(context$path) && nzchar(context$path)) {
+    basename(context$path)
+  } else {
+    "active editor"
+  }
+
+  modalDialog(
+    title = "Preview replacement",
+    tags$div(
+      class = "packet-replace-preview",
+      tags$div(
+        class = "packet-replace-target",
+        tags$span(class = "packet-change-kicker", "Target"),
+        tags$span(class = "packet-change-file", target_label)
+      ),
+      tags$div(
+        class = "packet-change-section",
+        tags$div(class = "packet-change-label", "Current selection"),
+        tags$pre(class = "packet-code-block", tags$code(context$selection_text %||% ""))
+      ),
+      tags$div(
+        class = "packet-change-section",
+        tags$div(class = "packet-change-label", "Replacement"),
+        tags$pre(class = "packet-code-block", tags$code(replacement_text %||% ""))
+      )
+    ),
+    footer = tagList(
+      modalButton("Cancel"),
+      actionButton("confirm_replace_selection", "Replace selection", class = "packet-primary-btn")
+    ),
+    easyClose = TRUE,
+    size = "l"
+  )
+}
+
+packetllm_client_script <- function() {
+  tags$script(HTML("
+    function packetSend(inputId, value) {
+      Shiny.setInputValue(inputId, value, { priority: 'event' });
+    }
+    $(document).on('click', '.send-btn-class', function() {
+      packetSend('dynamic_send_click', { convId: $(this).data('conv-id'), timestamp: Date.now() });
+    });
+    $(document).on('click', '.add-file-btn-class', function() {
+      if ($(this).is(':disabled')) return;
+      packetSend('dynamic_add_file_click', { convId: $(this).data('conv-id'), timestamp: Date.now() });
+      $('#hidden_file_input').val(null).click();
+    });
+    $(document).on('click', '.packet-action-copy', function() {
+      var text = $(this).attr('data-text') || '';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+      }
+      $(this).text('Copied');
+      var btn = $(this);
+      setTimeout(function(){ btn.text(btn.data('original-label') || 'Copy'); }, 1200);
+    });
+    $(document).on('mouseenter', '.packet-action-copy', function() {
+      if (!$(this).data('original-label')) $(this).data('original-label', $(this).text());
+    });
+    $(document).on('click', '.packet-action-insert, .packet-action-replace', function() {
+      if ($(this).is(':disabled')) return;
+      packetSend('packet_response_action', {
+        action: $(this).attr('data-action'),
+        convId: $(this).attr('data-conv-id'),
+        text: $(this).attr('data-text') || '',
+        timestamp: Date.now()
+      });
+    });
+    $(document).on('shiny:connected', function() {
+      Shiny.addCustomMessageHandler('resetFileInput', function(message) {
+        var el = $('#' + message.id);
+        if (el.length > 0) el.val(null);
+      });
+    });
+  "))
+}
+
+packetllm_styles <- function() {
+  tags$style(HTML("
+    :root {
+      --packet-bg: #f7f8fa;
+      --packet-panel: #ffffff;
+      --packet-text: #1f2933;
+      --packet-muted: #667085;
+      --packet-border: #d9dee7;
+      --packet-soft: #eef2f6;
+      --packet-accent: #2563a8;
+      --packet-accent-dark: #1f4f86;
+      --packet-danger: #b42318;
+    }
+    body {
+      background: var(--packet-bg);
+      color: var(--packet-text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container-fluid { padding-left: 0; padding-right: 0; }
+    .packet-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .packet-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--packet-panel);
+      border-bottom: 1px solid var(--packet-border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .packet-brand { font-weight: 650; font-size: 16px; line-height: 1.2; }
+    .packet-subtitle { color: var(--packet-muted); font-size: 12px; margin-top: 1px; }
+    .packet-topbar-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .packet-topbar-btn, .packet-primary-btn, .packet-secondary-btn, .packet-action-btn, .packet-icon-btn {
+      border: 1px solid var(--packet-border);
+      background: var(--packet-panel);
+      color: var(--packet-text);
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    .packet-topbar-primary, .packet-primary-btn {
+      background: var(--packet-accent);
+      border-color: var(--packet-accent);
+      color: #fff;
+    }
+    .packet-primary-btn:hover, .packet-topbar-primary:hover { background: var(--packet-accent-dark); color: #fff; }
+    .packet-main { flex: 1; padding: 10px 14px 0; min-width: 0; }
+    .nav-tabs { border-bottom-color: var(--packet-border); }
+    .nav-tabs > li > a { color: var(--packet-muted); padding: 8px 10px; border-radius: 6px 6px 0 0; }
+    .nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
+      color: var(--packet-text);
+      border-color: var(--packet-border) var(--packet-border) transparent;
+      background: var(--packet-panel);
+    }
+    .tab-content > .tab-pane {
+      background: var(--packet-panel);
+      border: 1px solid var(--packet-border);
+      border-top: none;
+      min-height: calc(100vh - 112px);
+      display: none;
+      flex-direction: column;
+    }
+    .tab-content > .tab-pane.active { display: flex; }
+    .packet-close-tab {
+      border: none;
+      background: transparent;
+      color: var(--packet-muted);
+      font-size: 11px;
+      margin-left: 6px;
+      padding: 0 2px;
+    }
+    .packet-context-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--packet-border);
+      background: #fbfcfd;
+    }
+    .packet-context-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .packet-context-caption { color: var(--packet-muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .packet-context-controls .form-group { margin: 0; }
+    .packet-context-controls select { height: 32px; font-size: 13px; padding: 4px 8px; }
+    .packet-icon-btn { padding: 8px 9px; color: var(--packet-muted); }
+    .packet-context-status { color: var(--packet-muted); font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .packet-context-ok { color: #344054; }
+    .packet-context-muted { color: var(--packet-muted); }
+    .packet-chat-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      min-height: 48vh;
+      background: var(--packet-panel);
+    }
+    .packet-empty-state {
+      color: var(--packet-muted);
+      border: 1px dashed var(--packet-border);
+      border-radius: 8px;
+      padding: 18px;
+      text-align: center;
+      background: #fbfcfd;
+    }
+    .packet-message {
+      max-width: 980px;
+      margin: 0 auto 14px;
+      border: 1px solid var(--packet-border);
+      border-radius: 8px;
+      background: var(--packet-panel);
+      overflow: hidden;
+    }
+    .packet-message-user { background: #fbfcfd; }
+    .packet-message-system { border-color: #f3b4ae; background: #fff7f6; color: var(--packet-danger); }
+    .packet-message-label {
+      border-bottom: 1px solid var(--packet-border);
+      background: #fbfcfd;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 650;
+      color: var(--packet-muted);
+    }
+    .packet-message-label-assistant { color: var(--packet-accent); }
+    .packet-message-body { padding: 10px; }
+    .packet-prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .packet-text-block { margin-bottom: 8px; line-height: 1.45; }
+    .packet-markdown h1, .packet-markdown h2, .packet-markdown h3,
+    .packet-markdown h4, .packet-markdown h5, .packet-markdown h6 {
+      margin: 10px 0 6px;
+      font-weight: 650;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+    .packet-markdown h1 { font-size: 20px; }
+    .packet-markdown h2 { font-size: 18px; }
+    .packet-markdown h3 { font-size: 16px; }
+    .packet-markdown h4, .packet-markdown h5, .packet-markdown h6 { font-size: 14px; }
+    .packet-md-p { margin: 0 0 9px; }
+    .packet-md-list { margin: 0 0 10px 20px; padding-left: 16px; }
+    .packet-md-list li { margin: 3px 0; }
+    .packet-md-quote {
+      margin: 8px 0;
+      padding: 8px 10px;
+      border-left: 3px solid var(--packet-border);
+      color: var(--packet-muted);
+      background: #f8fafc;
+    }
+    .packet-inline-code {
+      font-family: Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 0.92em;
+      background: var(--packet-soft);
+      color: #182230;
+      border: 1px solid var(--packet-border);
+      border-radius: 4px;
+      padding: 1px 4px;
+    }
+    .packet-md-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 13px;
+      overflow: hidden;
+    }
+    .packet-md-table th, .packet-md-table td {
+      border: 1px solid var(--packet-border);
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+    .packet-md-table th { background: #f8fafc; font-weight: 650; }
+    .packet-markdown .MathJax, .packet-markdown mjx-container { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+    .packet-code-card, .packet-change-card {
+      border: 1px solid var(--packet-border);
+      border-radius: 8px;
+      margin: 10px 0;
+      background: #fcfcfd;
+      overflow: hidden;
+    }
+    .packet-code-card-head, .packet-change-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--packet-border);
+      background: #f8fafc;
+    }
+    .packet-code-lang, .packet-change-file {
+      font-family: Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 12px;
+      color: #344054;
+    }
+    .packet-change-kicker, .packet-change-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      color: var(--packet-muted);
+      margin-bottom: 2px;
+    }
+    .packet-change-target {
+      color: var(--packet-muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 45%;
+    }
+    .packet-change-section { padding: 10px; border-bottom: 1px solid var(--packet-border); }
+    .packet-replace-preview {
+      border: 1px solid var(--packet-border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fcfcfd;
+    }
+    .packet-replace-target {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--packet-border);
+      background: #f8fafc;
+    }
+    .modal-dialog .packet-code-block {
+      max-height: 260px;
+      overflow: auto;
+    }
+    .packet-code-block {
+      margin: 0;
+      padding: 10px;
+      overflow-x: auto;
+      background: #0f172a;
+      color: #e5e7eb;
+      font-size: 12.5px;
+      line-height: 1.45;
+      border-radius: 0;
+    }
+    .packet-code-block code {
+      white-space: pre;
+      font-family: Consolas, 'Liberation Mono', Menlo, monospace;
+      color: inherit;
+      background: transparent;
+      padding: 0;
+    }
+    .packet-inline-actions, .packet-response-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .packet-response-actions { margin-top: 8px; }
+    .packet-action-btn { padding: 6px 8px; font-size: 12px; }
+    .packet-action-btn:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+    .packet-composer {
+      position: sticky;
+      bottom: 0;
+      border-top: 1px solid var(--packet-border);
+      background: #fbfcfd;
+      padding: 10px 12px;
+      z-index: 10;
+    }
+    .packet-attachments-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      min-width: 0;
+    }
+    .packet-attachments {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      overflow-x: auto;
+      color: var(--packet-muted);
+      font-size: 12px;
+    }
+    .packet-attachment-pill {
+      border: 1px solid var(--packet-border);
+      background: var(--packet-panel);
+      border-radius: 999px;
+      padding: 4px 8px;
+      white-space: nowrap;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .packet-input-row { display: flex; gap: 8px; align-items: stretch; }
+    .packet-input-row .form-group { flex: 1; margin: 0; min-width: 0; }
+    .packet-input-row textarea {
+      min-height: 58px;
+      resize: vertical;
+      border-color: var(--packet-border);
+      border-radius: 8px;
+      box-shadow: none;
+    }
+    .packet-input-row .packet-primary-btn { min-width: 74px; }
+    .packet-help-intro { margin-bottom: 12px; }
+    .packet-help-section { margin-bottom: 14px; }
+    .packet-help-section h4 { margin: 0 0 6px; font-size: 14px; font-weight: 650; color: var(--packet-text); }
+    .packet-help-section ul { margin: 0 0 0 18px; padding-left: 0; }
+    .packet-help-section li { margin: 4px 0; line-height: 1.45; }
+    .packet-help-section p { margin: 0 0 6px; }
+    .packet-help-foot { color: var(--packet-muted); font-size: 12px; margin-top: 4px; }
+    .packet-settings-group { margin-bottom: 12px; }
+    .packet-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 700px) {
+      .packet-topbar { align-items: flex-start; flex-direction: column; }
+      .packet-topbar-actions { justify-content: flex-start; width: 100%; }
+      .packet-main { padding: 6px 6px 0; }
+      .tab-content > .tab-pane { min-height: calc(100vh - 150px); }
+      .packet-context-row { align-items: flex-start; flex-direction: column; }
+      .packet-context-status { white-space: normal; }
+      .packet-input-row { flex-direction: column; }
+      .packet-input-row .packet-primary-btn { width: 100%; }
+      .packet-change-head { align-items: flex-start; flex-direction: column; }
+      .packet-change-target { max-width: 100%; white-space: normal; }
+      .packet-settings-grid { grid-template-columns: 1fr; }
+    }
+  "))
+}

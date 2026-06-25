@@ -4,11 +4,14 @@
 \alias{initialize_history_manager}
 \title{Initialize the history manager}
 \usage{
-initialize_history_manager()
+initialize_history_manager(persist = FALSE)
+}
+\arguments{
+\item{persist}{Logical. Restore and save local gadget history?}
 }
 \value{
 Character: ID of the created conversation.
 }
 \description{
-Clears state and creates a single new conversation, then activates it.
+Initializes state and creates or restores a conversation, then activates it.
 }

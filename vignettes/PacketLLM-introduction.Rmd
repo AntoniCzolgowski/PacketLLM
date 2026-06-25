@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Welcome to **PacketLLM**! This package provides a seamless way to interact with OpenAI's Large Language Models (LLMs) such as GPT-5 directly within your RStudio environment. It runs as an RStudio Gadget, offering a familiar chat interface without the need to switch between applications.
+**PacketLLM** is an RStudio gadget for AI-assisted development. It runs in the Viewer pane and connects to an AI backend, giving you a chat interface without leaving RStudio.
 
 With PacketLLM, you can:
 - Generate code and explanations.
@@ -29,12 +29,12 @@ With PacketLLM, you can:
 
 This vignette will guide you through the essential setup and basic usage.
 
-## Prerequisites: OpenAI API Key
+## Prerequisites: API Key
 
-PacketLLM requires an OpenAI API key.
+PacketLLM requires an API key set in your environment.
 
-- **Obtain an API Key:**  
-  Sign up on the OpenAI Platform and create an API key.
+- **Obtain an API key:**
+  Create an API key with your AI provider.
   
 - **Configure the API Key:**  
   The recommended method is to set the `OPENAI_API_KEY` environment variable.
@@ -47,10 +47,10 @@ PacketLLM requires an OpenAI API key.
   OPENAI_API_KEY='your_secret_api_key_here'
   ```
   
-  You can open the file using:
-  
+  You can open the file using (requires the `usethis` package):
+
   ```r
-  usethis::edit_r_environ()         # User-level
+  usethis::edit_r_environ()           # User-level
   usethis::edit_r_environ("project")  # Project-level
   ```
   
@@ -66,15 +66,17 @@ PacketLLM requires an OpenAI API key.
 
 ## Installation
 
-Install PacketLLM from GitHub:
+Install PacketLLM from CRAN:
 
 ```r
-# Uncomment the next line if you need the remotes package
+install.packages("PacketLLM")
+```
+
+Development version from GitHub:
+
+```r
 # install.packages("remotes")
 remotes::install_github("AntoniCzolgowski/PacketLLM")
-
-# From CRAN
-install.packages(PacketLLM)
 ```
 
 ## Launching the Chat Gadget

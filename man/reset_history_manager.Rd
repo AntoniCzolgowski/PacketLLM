@@ -4,7 +4,10 @@
 \alias{reset_history_manager}
 \title{Reset the history manager}
 \usage{
-reset_history_manager()
+reset_history_manager(clear_persistent = FALSE)
+}
+\arguments{
+\item{clear_persistent}{Logical. Delete saved local gadget history too?}
 }
 \value{
 Invisible NULL.

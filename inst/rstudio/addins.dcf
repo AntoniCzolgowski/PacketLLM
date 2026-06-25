@@ -1,0 +1,4 @@
+Name: PacketLLM
+Description: Launch the PacketLLM AI assistant gadget for RStudio.
+Binding: packetllm_addin
+Interactive: true

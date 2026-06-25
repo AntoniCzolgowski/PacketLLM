@@ -10,7 +10,7 @@ check_api_key()
 Invisible TRUE if set.
 }
 \description{
-Verifies that OPENAI_API_KEY is set. Stops if missing.
+Verifies that \code{OPENAI_API_KEY} is set. Stops if missing.
 }
 \examples{
 \dontrun{

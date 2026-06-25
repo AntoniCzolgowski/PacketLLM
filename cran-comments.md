@@ -1,26 +1,23 @@
 ## Submission
 
-This is a submission of PacketLLM (version 0.1.1). Thank you for the review.
+This is a resubmission of PacketLLM as version 0.1.2.
 
-### What's changed since 0.1.0
-* Models: restrict built-in presets to the OpenAI GPT-5 family ('gpt-5', 'gpt-5-mini', 'gpt-5-nano'); remove previous presets.
-* API compatibility: for GPT-5 models, omit unsupported 'temperature' parameter to avoid HTTP 400 “unsupported_value”.
-* UI: improve window fill; default chat area uses 65vh to better utilize space.
+### Changes since 0.1.1
 
-## R CMD check results
+* Add onboarding help modal and reopenable Help button.
+* Add automatic editor context polling (replaces manual refresh).
+* Fix custom instruction being silently ignored when behavior preset was not Custom.
+* Show model ID alongside preset name in the selector.
+* Consolidate internal helper; remove reflective `getFromNamespace` lookup.
+* Fix vignette `install.packages()` call; add `usethis` and `remotes` to Suggests.
 
-* Local checks on Windows (R 4.5.1): **0 ERRORs, 0 WARNINGs, 0 NOTEs**.
+### R CMD check results
 
-## URLs
+0 errors | 0 warnings | 0 notes
 
-* `urlchecker::url_check()` flags the official API reference  
-  `<https://platform.openai.com/docs/api-reference>` with **403: Forbidden**.  
-  The URL is correct and accessible in a standard web browser; the 403 is likely due to automated traffic restrictions on the OpenAI site.
+Tested on Windows (local) with R 4.5.2.
 
+### Additional notes
 
-## Additional notes
-
-* PacketLLM requires an `OPENAI_API_KEY` environment variable for full functionality. Examples/tests that would require network/API keys are wrapped appropriately to avoid issues on CRAN.
-
-
-Thank you for revieving PacketLLM
+* PacketLLM requires an `OPENAI_API_KEY` environment variable for live API calls.
+* All examples and tests that require network access or API credentials are wrapped with `\dontrun{}` or skipped when the variable is absent.

@@ -3,10 +3,10 @@
 
 library(PacketLLM)
 
-test_that("Standard model (gpt-5) formatting is correct", {
+test_that("Standard model formatting is correct", {
   reset_history_manager()
   conv_id <- create_new_conversation(activate = TRUE, title = "Standard Model Test")
-  model <- "gpt-5"
+  model <- PacketLLM::available_openai_models[1]
   sys_msg <- "You are a standard test bot."
   attachment_name <- "att1.txt"
   attachment_content <- "Attachment content"
@@ -40,6 +40,7 @@ test_that("Standard model (gpt-5) formatting is correct", {
   # System message should include attachments block and content
   sys_msg_prepared <- messages[[1]]
   expect_equal(sys_msg_prepared$role, "system")
+  expect_true(grepl("PacketLLM", sys_msg_prepared$content, fixed = TRUE))
   expect_true(grepl(sys_msg, sys_msg_prepared$content, fixed = TRUE))
   expect_true(grepl("ATTACHED FILES CONTEXT", sys_msg_prepared$content, fixed = TRUE))
   expect_true(grepl(attachment_name, sys_msg_prepared$content, fixed = TRUE))
@@ -56,7 +57,7 @@ test_that("Standard model (gpt-5) formatting is correct", {
 test_that("Placeholder user message is added when needed (no user content yet)", {
   reset_history_manager()
   conv_id <- create_new_conversation(activate = TRUE)
-  model <- "gpt-5"
+  model <- PacketLLM::available_openai_models[1]
   sys_msg <- "System prompt only."
 
   set_conversation_model(conv_id, model)
@@ -83,7 +84,8 @@ test_that("Placeholder user message is added when needed (no user content yet)",
 
   expect_equal(length(messages), 2) # system + placeholder user
   expect_equal(messages[[1]]$role, "system")
-  expect_equal(messages[[1]]$content, sys_msg)
+  expect_true(grepl("PacketLLM", messages[[1]]$content, fixed = TRUE))
+  expect_true(grepl(sys_msg, messages[[1]]$content, fixed = TRUE))
   expect_equal(messages[[2]]$role, "user")
   expect_true(grepl("awaiting a response", messages[[2]]$content, ignore.case = TRUE))
 

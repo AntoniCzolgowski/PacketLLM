@@ -19,18 +19,16 @@ add_user_message <- function(text) {
 #' @param verbose Logical for diagnostics.
 #' @return List with `messages`, or list with `error`.
 #' @noRd
-#' @importFrom utils getFromNamespace
 prepare_api_messages <- function(conversation_history,
                                  attachments,
                                  conversation_system_message,
                                  conversation_model,
+                                 context = NULL,
+                                 assistant_behavior = "default",
+                                 custom_instruction = "",
                                  verbose = getOption("PacketLLM.verbose", default = FALSE)) {
 
-  # No simplified models for GPT-5 family
-  simplified_models <- tryCatch(
-    getFromNamespace("simplified_models_list", "PacketLLM"),
-    error = function(e) character(0)
-  )
+  simplified_models <- simplified_models_list
 
   use_simplified_logic <- conversation_model %in% simplified_models
 
@@ -48,39 +46,28 @@ prepare_api_messages <- function(conversation_history,
     if (verbose) message("Preparing API messages: standard logic for ", conversation_model)
     api_messages <- conversation_history
 
+    behavior_instruction <- assistant_behavior_instruction(assistant_behavior, custom_instruction)
+    context_text <- format_rstudio_context_for_prompt(context)
+    attachment_text <- format_attachments_for_prompt(attachments)
+    system_parts <- c(
+      base_packetllm_instruction(),
+      behavior_instruction,
+      conversation_system_message
+    )
+    if (nzchar(context_text)) {
+      system_parts <- c(system_parts, paste0("--- RSTUDIO CONTEXT ---\n", context_text, "\n--- END RSTUDIO CONTEXT ---"))
+    }
+    if (nzchar(attachment_text)) {
+      system_parts <- c(system_parts, attachment_text)
+    }
+    full_system_message <- paste(system_parts[nzchar(trimws(system_parts))], collapse = "\n\n")
+
     # Ensure system message at the front
     if (length(api_messages) == 0 || api_messages[[1]]$role != "system") {
       if (verbose) message("Prepending system message.")
-      api_messages <- c(list(list(role = "system", content = conversation_system_message)), api_messages)
+      api_messages <- c(list(list(role = "system", content = full_system_message)), api_messages)
     } else {
-      api_messages[[1]]$content <- conversation_system_message
-    }
-
-    # Append attachments into system message
-    if (length(attachments) > 0) {
-      if (verbose) message("Including context from ", length(attachments), " attachments.")
-      attachments_text <- ""
-      for (att in attachments) {
-        if (is.list(att) && !is.null(att$name) && !is.null(att$content)) {
-          attachments_text <- paste0(
-            attachments_text,
-            "\n\n--- START OF ATTACHMENT: ", att$name, " ---\n",
-            att$content,
-            "\n--- END OF ATTACHMENT: ", att$name, " ---"
-          )
-        } else {
-          warning("Skipping invalid attachment format during message preparation.", call. = FALSE)
-        }
-      }
-      if (nzchar(attachments_text)) {
-        base_system_content <- api_messages[[1]]$content
-        api_messages[[1]]$content <- paste0(
-          base_system_content,
-          "\n\n--- ATTACHED FILES CONTEXT (AVAILABLE TO YOU IN THIS CONVERSATION) ---",
-          attachments_text,
-          "\n--- END OF ATTACHED FILES CONTEXT ---"
-        )
-      }
+      api_messages[[1]]$content <- full_system_message
     }
 
     # Ensure last message is from user
@@ -95,6 +82,39 @@ prepare_api_messages <- function(conversation_history,
   }
 
   list(messages = api_messages)
+}
+
+format_attachments_for_prompt <- function(attachments, max_chars_per_file = 5000) {
+  if (length(attachments) == 0) {
+    return("")
+  }
+
+  attachment_blocks <- character(0)
+  for (att in attachments) {
+    if (is.list(att) && !is.null(att$name) && !is.null(att$content)) {
+      content <- truncate_context_text(att$content, max_chars_per_file)
+      attachment_blocks <- c(
+        attachment_blocks,
+        paste0(
+          "--- START OF ATTACHMENT: ", att$name, " ---\n",
+          content,
+          "\n--- END OF ATTACHMENT: ", att$name, " ---"
+        )
+      )
+    } else {
+      warning("Skipping invalid attachment format during message preparation.", call. = FALSE)
+    }
+  }
+
+  if (length(attachment_blocks) == 0) {
+    return("")
+  }
+
+  paste0(
+    "--- ATTACHED FILES CONTEXT (AVAILABLE TO YOU IN THIS CONVERSATION) ---\n",
+    paste(attachment_blocks, collapse = "\n\n"),
+    "\n--- END OF ATTACHED FILES CONTEXT ---"
+  )
 }
 
 #' Get assistant response for the active conversation
@@ -114,7 +134,12 @@ get_assistant_response <- function() {
   conversation_history <- active_conv$history %||% list()
   attachments <- active_conv$attachments %||% list()
   conversation_system_message <- active_conv$system_message %||% "You are a helpful assistant."
-  conversation_model <- active_conv$model %||% "gpt-5"
+  conversation_model <- active_conv$model %||% default_model_settings()$model
+  assistant_behavior <- active_conv$assistant_behavior %||% "default"
+  custom_instruction <- active_conv$custom_instruction %||% ""
+  reasoning_effort <- active_conv$reasoning_effort %||% "medium"
+  verbosity <- active_conv$verbosity %||% "low"
+  max_output_tokens <- active_conv$max_output_tokens %||% NA_integer_
 
   if (is_verbose()) message(paste("Getting assistant response for model:", conversation_model))
 
@@ -124,6 +149,9 @@ get_assistant_response <- function() {
       attachments = attachments,
       conversation_system_message = conversation_system_message,
       conversation_model = conversation_model,
+      context = NULL,
+      assistant_behavior = assistant_behavior,
+      custom_instruction = custom_instruction,
       verbose = is_verbose()
     )
   }, error = function(e) {
@@ -150,7 +178,13 @@ get_assistant_response <- function() {
   }
 
   response_text <- tryCatch({
-    call_openai_chat(api_messages, model = conversation_model)
+    call_openai_chat(
+      api_messages,
+      model = conversation_model,
+      reasoning_effort = reasoning_effort,
+      verbosity = verbosity,
+      max_output_tokens = max_output_tokens
+    )
   }, error = function(e) {
     error_message <- paste("API Error:", e$message)
     warning(error_message)
@@ -178,7 +212,4 @@ get_assistant_response <- function() {
 
   response_text
 }
-
-# Helper %||%
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x
 
