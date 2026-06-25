@@ -1,3 +1,16 @@
+# PacketLLM 0.1.2
+
+* UI: add onboarding help modal (shown once on first launch, reopenable via Help button) covering context modes, editor actions, settings, and persistence.
+* UI: show model ID alongside preset name in the selector (e.g. "Best - gpt-5.5").
+* UI: add visible "Context:" label before the context mode selector.
+* UI: render the assistant label in accent color for easier chat scanning.
+* UI: grey out the custom instruction field when behavior is not set to Custom.
+* Context: replace manual refresh button with automatic 1-second editor polling; context updates silently when selection or file changes.
+* Settings: fix custom instruction being silently ignored when behavior preset was not set to Custom.
+* Code: consolidate internal `%||%` helper to a single definition.
+* Code: replace internal `getFromNamespace` reflective lookup with a direct reference.
+* Docs: fix vignette `install.packages()` call (missing quotes); add `usethis` and `remotes` to Suggests.
+
 # PacketLLM 0.1.1
 
 * Models: replace old built-in defaults with model presets (`Best`, `Balanced`, `Fast`) backed by `gpt-5.5`, `gpt-5.4`, and `gpt-5.4-mini`.

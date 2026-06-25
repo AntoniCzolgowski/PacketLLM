@@ -15,16 +15,12 @@ knitr::opts_chunk$set(
 
 # PacketLLM
 
-> An RStudio gadget that brings an AI assistant directly into your development workflow — context-aware, non-blocking, and editor-integrated.
+An RStudio gadget that connects an AI assistant to your editor: context-aware, non-blocking, and with direct code insertion and replacement.
 
 [![CRAN status](https://www.r-pkg.org/badges/version/PacketLLM)](https://CRAN.R-project.org/package=PacketLLM)
 [![R-CMD-check](https://github.com/AntoniCzolgowski/PacketLLM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/AntoniCzolgowski/PacketLLM/actions)
 
-PacketLLM runs as an RStudio gadget (Viewer pane or pop-out window) and
-connects to an OpenAI-compatible backend. Unlike a standalone chat interface,
-it automatically captures your active selection, open file, and package
-metadata so you can ask questions about your actual code without copy-pasting
-anything.
+PacketLLM runs as an RStudio gadget (Viewer pane or pop-out window). It automatically captures your active selection, open file, and package metadata, so you can ask questions about your actual code without copy-pasting anything.
 
 ---
 
@@ -32,8 +28,7 @@ anything.
 
 **Context-aware conversations**
 
-The gadget polls the RStudio editor every second and feeds the current
-context into every message. Four modes let you control scope:
+The gadget polls the RStudio editor every second and feeds the current context into every message. Four modes control scope:
 
 | Mode | What the model sees |
 |------|---------------------|
@@ -44,27 +39,19 @@ context into every message. Four modes let you control scope:
 
 **Non-blocking API calls**
 
-Requests run in a background thread via `future` and `promises`. The R
-console stays fully usable while the model is thinking.
+Requests run in a background thread via `future` and `promises`. The R console stays fully usable while the model is thinking.
 
 **Editor actions**
 
 Each code block in a response exposes three buttons:
 
-- **Copy** — puts the code on the clipboard.
-- **Insert** — places the code at the captured cursor position in the active
-  source document.
-- **Replace** — opens a before/after preview, then validates that the editor
-  selection has not changed since it was captured before writing the
-  replacement. If it has changed, the action is blocked until context
-  refreshes.
+- **Copy:** puts the code on the clipboard.
+- **Insert:** places the code at the captured cursor position in the active source document.
+- **Replace:** opens a before/after preview, then validates that the editor selection has not changed since it was captured before writing the replacement. If it has changed, the action is blocked until context refreshes.
 
 **Persistent conversations**
 
-History, settings, and attached file names are written to
-`tools::R_user_dir("PacketLLM", "data")` automatically. Closing the gadget
-and reopening it — even after restarting RStudio — restores every conversation
-exactly as it was.
+History, settings, and attached file names are written to `tools::R_user_dir("PacketLLM", "data")` automatically. Closing the gadget and reopening it, even after restarting RStudio, restores every conversation exactly as it was.
 
 **Model presets**
 
@@ -76,8 +63,7 @@ Three presets cover common trade-offs between quality and latency:
 | Balanced | gpt-5.4 | Day-to-day development |
 | Fast | gpt-5.4-mini | Quick edits, short questions |
 
-The model is selectable before the first message in a conversation and locked
-after that to keep the context consistent.
+The model is selectable before the first message in a conversation and locked after that to keep the context consistent.
 
 **Assistant behavior presets**
 
@@ -91,16 +77,11 @@ after that to keep the context consistent.
 
 **File attachments**
 
-Attach `.R`, `.pdf`, `.docx`, or `.txt` files as additional context. Attached
-files are stored in the conversation and included in every subsequent message
-until the conversation is closed.
+Attach `.R`, `.pdf`, `.docx`, or `.txt` files as additional context. Attached files are stored in the conversation and included in every subsequent message.
 
 **Safe rendering**
 
-Assistant output is parsed into typed blocks (text, code, change cards) and
-rendered as structured HTML. User and model content is never injected as raw
-HTML. Markdown headings, lists, tables, inline formatting, and LaTeX math
-(`\(...\)` / `\[...\]`) are all supported.
+Assistant output is parsed into typed blocks (text, code, change cards) and rendered as structured HTML. User and model content is never injected as raw HTML. Markdown headings, lists, tables, inline formatting, and LaTeX math (`\(...\)` and `\[...\]`) are all supported.
 
 ---
 
@@ -121,8 +102,7 @@ remotes::install_github("AntoniCzolgowski/PacketLLM")
 
 ## Configuration
 
-PacketLLM reads the API key from the `OPENAI_API_KEY` environment variable.
-Add it to your user-level `.Renviron`:
+PacketLLM reads the API key from the `OPENAI_API_KEY` environment variable. Add it to your user-level `.Renviron`:
 
 ```r
 usethis::edit_r_environ()
@@ -147,30 +127,24 @@ library(PacketLLM)
 run_llm_chat_app()
 ```
 
-The gadget opens in the Viewer pane. Select some code in the editor, switch
-back to the gadget, and the context status label confirms what was captured.
-Type a question and press **Send**.
+The gadget opens in the Viewer pane. Select some code in the editor, switch back to the gadget, and the context status label confirms what was captured. Type a question and press **Send**.
 
 ### Typical workflow
 
 1. Select a function in the editor.
 2. Open PacketLLM (Addins menu or `run_llm_chat_app()`).
-3. Ask a question — no need to paste the code, it is already in context.
-4. Click **Replace** on a suggested code block to preview and apply the change
-   directly to the editor.
+3. Ask a question. No need to paste the code; it is already in context.
+4. Click **Replace** on a suggested code block to preview and apply the change directly to the editor.
 
 ### Multiple conversations
 
-Use **New chat** to open a separate tab. Each tab has its own context mode,
-model, attached files, and history. Close tabs with the **x** on the tab;
-the last tab cannot be closed.
+Use **New chat** to open a separate tab. Each tab has its own context mode, model, attached files, and history. Close tabs with the **x** on the tab; the last tab cannot be closed.
 
 ---
 
 ## Package API
 
-The public API exposes the history manager and key helpers for scripting and
-testing:
+The public API exposes the history manager and key helpers for scripting and testing:
 
 ```r
 # Conversation lifecycle
@@ -201,12 +175,10 @@ parse_pages(pages_str)
 ## Requirements
 
 - R >= 4.1.0
-- RStudio (for editor-aware features; the gadget runs outside RStudio with
-  reduced functionality)
-- An OpenAI API key set as `OPENAI_API_KEY`
+- RStudio (for editor-aware features; the gadget runs outside RStudio with reduced functionality)
+- An API key set as `OPENAI_API_KEY`
 
-**Imports:** `future`, `httr`, `pdftools`, `promises`, `readtext`,
-`rstudioapi`, `shiny`, `shinyjs`
+**Imports:** `future`, `httr`, `pdftools`, `promises`, `readtext`, `rstudioapi`, `shiny`, `shinyjs`
 
 ---
 

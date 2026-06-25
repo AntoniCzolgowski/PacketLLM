@@ -3,19 +3,18 @@
 
 # PacketLLM
 
-> An RStudio gadget that brings an AI assistant directly into your
-> development workflow — context-aware, non-blocking, and
-> editor-integrated.
+An RStudio gadget that connects an AI assistant to your editor:
+context-aware, non-blocking, and with direct code insertion and
+replacement.
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/PacketLLM)](https://CRAN.R-project.org/package=PacketLLM)
 [![R-CMD-check](https://github.com/AntoniCzolgowski/PacketLLM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/AntoniCzolgowski/PacketLLM/actions)
 
-PacketLLM runs as an RStudio gadget (Viewer pane or pop-out window) and
-connects to an OpenAI-compatible backend. Unlike a standalone chat
-interface, it automatically captures your active selection, open file,
-and package metadata so you can ask questions about your actual code
-without copy-pasting anything.
+PacketLLM runs as an RStudio gadget (Viewer pane or pop-out window). It
+automatically captures your active selection, open file, and package
+metadata, so you can ask questions about your actual code without
+copy-pasting anything.
 
 ------------------------------------------------------------------------
 
@@ -24,7 +23,7 @@ without copy-pasting anything.
 **Context-aware conversations**
 
 The gadget polls the RStudio editor every second and feeds the current
-context into every message. Four modes let you control scope:
+context into every message. Four modes control scope:
 
 | Mode    | What the model sees                                           |
 |---------|---------------------------------------------------------------|
@@ -42,10 +41,10 @@ console stays fully usable while the model is thinking.
 
 Each code block in a response exposes three buttons:
 
-- **Copy** — puts the code on the clipboard.
-- **Insert** — places the code at the captured cursor position in the
+- **Copy:** puts the code on the clipboard.
+- **Insert:** places the code at the captured cursor position in the
   active source document.
-- **Replace** — opens a before/after preview, then validates that the
+- **Replace:** opens a before/after preview, then validates that the
   editor selection has not changed since it was captured before writing
   the replacement. If it has changed, the action is blocked until
   context refreshes.
@@ -54,7 +53,7 @@ Each code block in a response exposes three buttons:
 
 History, settings, and attached file names are written to
 `tools::R_user_dir("PacketLLM", "data")` automatically. Closing the
-gadget and reopening it — even after restarting RStudio — restores every
+gadget and reopening it, even after restarting RStudio, restores every
 conversation exactly as it was.
 
 **Model presets**
@@ -84,14 +83,14 @@ locked after that to keep the context consistent.
 
 Attach `.R`, `.pdf`, `.docx`, or `.txt` files as additional context.
 Attached files are stored in the conversation and included in every
-subsequent message until the conversation is closed.
+subsequent message.
 
 **Safe rendering**
 
 Assistant output is parsed into typed blocks (text, code, change cards)
 and rendered as structured HTML. User and model content is never
 injected as raw HTML. Markdown headings, lists, tables, inline
-formatting, and LaTeX math (`\(...\)` / `\[...\]`) are all supported.
+formatting, and LaTeX math (`\(...\)` and `\[...\]`) are all supported.
 
 ------------------------------------------------------------------------
 
@@ -148,8 +147,7 @@ was captured. Type a question and press **Send**.
 
 1.  Select a function in the editor.
 2.  Open PacketLLM (Addins menu or `run_llm_chat_app()`).
-3.  Ask a question — no need to paste the code, it is already in
-    context.
+3.  Ask a question. No need to paste the code; it is already in context.
 4.  Click **Replace** on a suggested code block to preview and apply the
     change directly to the editor.
 
@@ -197,7 +195,7 @@ parse_pages(pages_str)
 - R \>= 4.1.0
 - RStudio (for editor-aware features; the gadget runs outside RStudio
   with reduced functionality)
-- An OpenAI API key set as `OPENAI_API_KEY`
+- An API key set as `OPENAI_API_KEY`
 
 **Imports:** `future`, `httr`, `pdftools`, `promises`, `readtext`,
 `rstudioapi`, `shiny`, `shinyjs`

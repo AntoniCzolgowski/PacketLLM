@@ -1,6 +1,6 @@
 Package: PacketLLM
 Title: AI Assistant Gadget for 'RStudio'
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: 
     person("Antoni", "Czolgowski", email = "antoni.czolgowski@gmail.com", role = c("aut", "cre"))
 Description: Provides an interactive 'RStudio' gadget for working with an AI
@@ -11,8 +11,7 @@ Description: Provides an interactive 'RStudio' gadget for working with an AI
     code-focused output, and explicit copy, insert, and replace actions for the
     active source editor. API interactions via the 'httr' package are performed
     asynchronously using 'promises' and 'future' to avoid blocking the R console.
-    The first backend uses an 'OpenAI'-compatible API key set with the
-    OPENAI_API_KEY environment variable.
+    The backend is configured via the OPENAI_API_KEY environment variable.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
