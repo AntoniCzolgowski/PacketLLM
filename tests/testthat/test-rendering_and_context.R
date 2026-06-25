@@ -85,17 +85,19 @@ test_that("code cards expose replace when a selection target exists", {
   expect_true(grepl(">Replace</button>", rendered$html, fixed = TRUE))
 })
 
-test_that("help modal explains the key actions and persistence", {
+test_that("help modal covers all key sections", {
   rendered <- htmltools::renderTags(PacketLLM:::packetllm_help_modal())
   html <- rendered$html
 
-  expect_true(grepl("Insert and Replace", html, fixed = TRUE))
-  expect_true(grepl("Context modes", html, fixed = TRUE))
+  expect_true(grepl("Insert", html, fixed = TRUE))
+  expect_true(grepl("Replace", html, fixed = TRUE))
   expect_true(grepl("Auto", html, fixed = TRUE))
   expect_true(grepl("Focused", html, fixed = TRUE))
   expect_true(grepl("Project", html, fixed = TRUE))
   expect_true(grepl("None", html, fixed = TRUE))
-  expect_true(grepl("remembered", html, fixed = TRUE))
+  expect_true(grepl("Attach", html, fixed = TRUE))
+  expect_true(grepl("Settings", html, fixed = TRUE))
+  expect_true(grepl("saved", html, fixed = TRUE))
 })
 
 test_that("replace preview modal shows current and replacement code", {
