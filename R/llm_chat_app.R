@@ -528,66 +528,24 @@ packetllm_help_modal <- function() {
 
       tags$p(
         class = "packet-help-intro",
-        paste(
-          "PacketLLM is an AI assistant that runs inside RStudio and knows about your code.",
-          "It can see the file you have open, the text you have selected, and your package structure",
-          "— so you can ask it things like",
-          "“explain this function”, “add error handling to the selected block”,",
-          "or “what tests are missing here” and get answers that are actually about your code."
-        )
+        "PacketLLM is an AI assistant for RStudio.",
+        "It can see your open file, selected code, and package structure.",
+        "Type a question and press Send. No need to paste code manually."
       ),
 
       tags$div(
         class = "packet-help-section",
-        tags$h4("Sending your first message"),
-        tags$p("Type a question in the text box at the bottom and press Send. That's it."),
-        tags$p(
-          "The more specific you are, the better the answer. Instead of",
-          tags$em("“fix this”"),
-          ", try",
-          tags$em("“this function throws a subscript out of bounds error when the input is empty — what is the safest fix?”"),
-          "."
-        ),
-        tags$p(
-          "You do not need to paste your code into the message — PacketLLM already",
-          "sees it through the context system described below."
-        )
-      ),
-
-      tags$div(
-        class = "packet-help-section",
-        tags$h4("What the model sees — context"),
-        tags$p(
-          "The", tags$strong("Context"), "selector at the top of each tab controls what",
-          "PacketLLM includes alongside your message."
-        ),
+        tags$h4("Context"),
+        tags$p("The Context selector controls what PacketLLM includes with your message:"),
         tags$ul(
-          tags$li(
-            tags$strong("Auto"), " — smart default.",
-            " Uses your selection when you have one,",
-            " otherwise sends the full active file, otherwise falls back to project metadata."
-          ),
-          tags$li(
-            tags$strong("Focused"), " — keeps the prompt tight.",
-            " Sends only the active selection or the active file, nothing else.",
-            " Good when you want a precise answer about a small piece of code."
-          ),
-          tags$li(
-            tags$strong("Project"), " — broader view.",
-            " Sends the active file plus your package DESCRIPTION and the list of project files.",
-            " Useful for questions like “what is this package missing?” or",
-            " “is there already a helper for X somewhere?”"
-          ),
-          tags$li(
-            tags$strong("None"), " — no editor context.",
-            " Sends only your typed message.",
-            " Use this for general R questions that are not specific to your current code."
-          )
+          tags$li(tags$strong("Auto"), " uses your selection if you have one, otherwise the active file, then project metadata."),
+          tags$li(tags$strong("Focused"), " uses only the active selection or file."),
+          tags$li(tags$strong("Project"), " uses the active file plus package DESCRIPTION and the project file list."),
+          tags$li(tags$strong("None"), " sends only your message, no editor content.")
         ),
         tags$p(
-          "Context is captured automatically every second while the gadget is open —",
-          "select some text in the editor and the status label next to the selector updates immediately.",
-          "You do not need to click anything to refresh it."
+          "Context updates automatically as you select text or switch files.",
+          "The status label next to the selector shows what was captured."
         )
       ),
 
@@ -596,68 +554,46 @@ packetllm_help_modal <- function() {
         tags$h4("Attaching files"),
         tags$p(
           "Click", tags$strong("Attach"), "to add a file as context before sending.",
-          "Supported formats: .R, .pdf, .docx, .txt."
+          "Supported: .R, .pdf, .docx, .txt."
         ),
         tags$p(
-          "Attached files are kept for the whole conversation and sent with every subsequent message,",
-          "so you can refer back to them without re-attaching.",
-          "This is useful for error logs, documentation files, or any file that is not",
-          "currently open in the editor."
+          "Attached files are included in every subsequent message in the conversation.",
+          "Useful for error logs or documentation files not open in the editor."
         )
       ),
 
       tags$div(
         class = "packet-help-section",
-        tags$h4("Using code from responses — Insert and Replace"),
-        tags$p(
-          "Every code block in a response has three buttons:",
-          tags$strong("Copy"), ",", tags$strong("Insert"), ", and", tags$strong("Replace"), "."
-        ),
+        tags$h4("Insert and Replace"),
+        tags$p("Code blocks in responses have Copy, Insert, and Replace buttons."),
         tags$ul(
+          tags$li(tags$strong("Insert"), " places the code at your cursor in the active editor."),
           tags$li(
-            tags$strong("Copy"), " puts the code on your clipboard."
-          ),
-          tags$li(
-            tags$strong("Insert"), " places the code at your cursor position in the active source editor.",
-            " Your cursor position is captured as part of the context,",
-            " so the code lands exactly where you are."
-          ),
-          tags$li(
-            tags$strong("Replace"), " swaps your current editor selection for the suggested code.",
-            " A preview opens first so you can compare what you have now and what will replace it.",
-            " PacketLLM also re-checks that your selection still matches what it captured —",
-            " if you changed the selection in the meantime, it will ask you to refresh first."
+            tags$strong("Replace"), " swaps your current selection for the suggested code.",
+            " A preview shows both versions before you confirm.",
+            " PacketLLM re-checks that the selection has not changed since it was captured;",
+            " if it has, you are asked to refresh first."
           )
         ),
-        tags$p(
-          "Insert and Replace are greyed out when there is no active editor open",
-          "or when context has not been captured yet."
-        )
+        tags$p("Both buttons are disabled if no editor context was captured.")
       ),
 
       tags$div(
         class = "packet-help-section",
         tags$h4("Settings"),
-        tags$p(
-          "Click", tags$strong("Settings"), "in the top bar to configure the current conversation."
-        ),
+        tags$p("Click", tags$strong("Settings"), "to configure the current conversation:"),
         tags$ul(
           tags$li(
-            tags$strong("Model preset"), " — choose between Best, Balanced, and Fast.",
-            " Best is the most capable; Fast has lower latency for quick edits.",
-            " The model can only be changed before you send the first message in a conversation —",
-            " after that it is locked to keep the context consistent."
+            tags$strong("Model"), " can only be changed before the first message.",
+            " After that it is locked for that conversation."
           ),
           tags$li(
-            tags$strong("Assistant behavior"), " — shapes how responses are written.",
-            " Default is general-purpose; Concise keeps answers short;",
-            " Code-focused prioritises runnable code over prose;",
-            " Reviewer puts the assistant in a code-review stance, leading with bugs and risks.",
-            " Custom lets you write your own instruction."
+            tags$strong("Behavior"), " presets: Default, Concise, Code-focused, Reviewer, Custom.",
+            " They shape how the assistant responds without changing the model."
           ),
           tags$li(
-            tags$strong("Reasoning and Verbosity"), " — control how much effort the model",
-            " spends thinking and how detailed its output is."
+            tags$strong("Reasoning and Verbosity"), " control how much the model",
+            " thinks and how detailed its output is."
           )
         )
       ),
@@ -666,29 +602,23 @@ packetllm_help_modal <- function() {
         class = "packet-help-section",
         tags$h4("Multiple conversations"),
         tags$p(
-          "Use", tags$strong("New chat"), "to open a separate conversation in a new tab.",
-          "Each tab has its own context mode, model settings, attached files, and history —",
-          "useful if you want to keep one thread for debugging and another for writing documentation."
-        ),
-        tags$p(
-          "Close a tab with the", tags$strong("×"), "button on the tab itself.",
-          "The last remaining tab cannot be closed."
+          tags$strong("New chat"), "opens a new tab with its own context mode, model, and history.",
+          "Close a tab with the x on the tab. The last tab cannot be closed."
         )
       ),
 
       tags$div(
         class = "packet-help-section",
-        tags$h4("Your conversations are saved"),
+        tags$h4("Conversations are saved"),
         tags$p(
-          "Everything is saved automatically: conversation history, settings, and attached file names.",
-          "You can close the gadget mid-conversation and reopen it — it picks up exactly where you left off,",
-          "including across RStudio restarts."
+          "History, settings, and attached file names are saved automatically.",
+          "Close the gadget and reopen it and everything is restored, including across RStudio restarts."
         )
       ),
 
       tags$p(
         class = "packet-help-foot",
-        "Reopen this guide any time with the Help button in the top bar."
+        "Reopen this guide any time with the Help button."
       )
     ),
     footer = modalButton("Got it"),
