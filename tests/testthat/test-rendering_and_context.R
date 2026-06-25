@@ -37,6 +37,13 @@ test_that("context formatter handles unavailable context", {
   expect_equal(PacketLLM:::format_rstudio_context_for_prompt(context), "")
 })
 
+test_that("context signatures change when selected text changes", {
+  context_a <- list(mode = "auto", source = "selection", document_id = "1", path = "R/a.R", selection_text = "x <- 1", file_excerpt = "")
+  context_b <- list(mode = "auto", source = "selection", document_id = "1", path = "R/a.R", selection_text = "x <- 2", file_excerpt = "")
+
+  expect_false(identical(PacketLLM:::context_signature(context_a), PacketLLM:::context_signature(context_b)))
+})
+
 test_that("markdown renderer formats common markdown safely", {
   rendered <- htmltools::renderTags(PacketLLM:::render_markdown_blocks("## Title\n\n- **bold** item\n\n`x <- 1`\n\n<script>alert(1)</script>"))
   html <- rendered$html

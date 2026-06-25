@@ -14,12 +14,6 @@ create_tab_content_ui <- function(conv_id) {
           choices = context_mode_choices(),
           selected = "auto",
           width = "132px"
-        ),
-        actionButton(
-          ns("refresh_context_btn"),
-          "Refresh",
-          class = "packet-icon-btn packet-refresh-context",
-          title = "Refresh RStudio context"
         )
       ),
       tags$div(class = "packet-context-status", uiOutput(ns("context_status_output")))

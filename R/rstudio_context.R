@@ -210,5 +210,38 @@ format_rstudio_context_for_prompt <- function(context) {
   paste(sections, collapse = "\n\n")
 }
 
+context_signature <- function(context) {
+  if (is.null(context)) {
+    return("")
+  }
+  paste(
+    context$mode %||% "",
+    context$source %||% "",
+    context$document_id %||% "",
+    context$path %||% "",
+    range_signature(context$selection_range),
+    compact_text_signature(context$selection_text %||% ""),
+    compact_text_signature(context$file_excerpt %||% ""),
+    context$project_path %||% "",
+    sep = "|"
+  )
+}
+
+range_signature <- function(selection_range) {
+  if (is.null(selection_range)) {
+    return("")
+  }
+  paste(utils::capture.output(utils::str(selection_range, give.attr = FALSE)), collapse = " ")
+}
+
+compact_text_signature <- function(text) {
+  text <- text %||% ""
+  n <- nchar(text, type = "chars")
+  if (n <= 160) {
+    return(paste(n, text, sep = ":"))
+  }
+  paste(n, substr(text, 1, 80), substr(text, n - 79, n), sep = ":")
+}
+
 # Helper %||%
 `%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x

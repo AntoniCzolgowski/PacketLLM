@@ -56,6 +56,7 @@ run_llm_chat_app <- function() {
     staged_attachments_rv <- reactiveVal(list())
     context_state_rv <- reactiveVal(list())
     pending_replace_rv <- reactiveVal(NULL)
+    context_poll_timer <- reactiveTimer(1000, session)
 
     get_context_for_tab <- function(conv_id) {
       context_state_rv()[[conv_id]]
@@ -88,12 +89,18 @@ run_llm_chat_app <- function() {
       )
     }
 
-    capture_context_for_tab <- function(conv_id) {
+    capture_context_for_tab <- function(conv_id, force = FALSE, save_mode = TRUE) {
       ns <- NS(conv_id)
       mode <- isolate(input[[ns("context_mode")]]) %||% get_conversation_data(conv_id)$context_mode %||% "auto"
       context <- capture_rstudio_context(mode = mode)
+      old_context <- get_context_for_tab(conv_id)
+      if (!isTRUE(force) && identical(context_signature(context), context_signature(old_context))) {
+        return(invisible(old_context))
+      }
       set_context_for_tab(conv_id, context)
-      set_conversation_generation_settings(conv_id, context_mode = mode)
+      if (isTRUE(save_mode)) {
+        set_conversation_generation_settings(conv_id, context_mode = mode)
+      }
       render_context_status(conv_id)
       render_chat_for_tab(conv_id)
       invisible(context)
@@ -145,7 +152,7 @@ run_llm_chat_app <- function() {
       output[[ns("staged_files_list_output")]] <- render_staged_attachments_list_ui(list())
       render_context_status(conv_id)
       render_chat_for_tab(conv_id)
-      capture_context_for_tab(conv_id)
+      capture_context_for_tab(conv_id, force = TRUE, save_mode = FALSE)
       update_send_button_state(conv_id)
 
       observeEvent(input[[ns("user_message_input")]], {
@@ -153,14 +160,18 @@ run_llm_chat_app <- function() {
       }, ignoreNULL = FALSE, ignoreInit = TRUE, autoDestroy = TRUE)
 
       observeEvent(input[[ns("context_mode")]], {
-        capture_context_for_tab(conv_id)
+        capture_context_for_tab(conv_id, force = TRUE, save_mode = TRUE)
       }, ignoreNULL = FALSE, ignoreInit = TRUE, autoDestroy = TRUE)
-
-      observeEvent(input[[ns("refresh_context_btn")]], {
-        capture_context_for_tab(conv_id)
-        showNotification("Context refreshed.", type = "message", duration = 2)
-      }, ignoreInit = TRUE, autoDestroy = TRUE)
     }
+
+    observe({
+      context_poll_timer()
+      if (!isTRUE(first_tab_created())) return()
+      active_id <- active_conv_id_rv()
+      if (is.null(active_id) || !active_id %in% open_tab_ids_rv()) return()
+      if (isTRUE(processing_state[[active_id]])) return()
+      capture_context_for_tab(active_id, force = FALSE, save_mode = FALSE)
+    })
 
     observeEvent(TRUE, {
       req(!first_tab_created())
