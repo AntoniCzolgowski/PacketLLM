@@ -431,6 +431,15 @@ run_llm_chat_app <- function() {
           shinyjs::runjs("$('#model_locked_message').show();")
         }
       })
+
+      observe({
+        req(!is.null(input$modal_assistant_behavior))
+        if (identical(input$modal_assistant_behavior, "custom")) {
+          shinyjs::enable("modal_custom_instruction")
+        } else {
+          shinyjs::disable("modal_custom_instruction")
+        }
+      })
     })
 
     observeEvent(input$save_advanced_settings, {
