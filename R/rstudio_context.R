@@ -242,6 +242,3 @@ compact_text_signature <- function(text) {
   }
   paste(n, substr(text, 1, 80), substr(text, n - 79, n), sep = ":")
 }
-
-# Helper %||%
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x

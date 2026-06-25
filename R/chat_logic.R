@@ -19,7 +19,6 @@ add_user_message <- function(text) {
 #' @param verbose Logical for diagnostics.
 #' @return List with `messages`, or list with `error`.
 #' @noRd
-#' @importFrom utils getFromNamespace
 prepare_api_messages <- function(conversation_history,
                                  attachments,
                                  conversation_system_message,
@@ -29,11 +28,7 @@ prepare_api_messages <- function(conversation_history,
                                  custom_instruction = "",
                                  verbose = getOption("PacketLLM.verbose", default = FALSE)) {
 
-  # No simplified models for GPT-5 family
-  simplified_models <- tryCatch(
-    getFromNamespace("simplified_models_list", "PacketLLM"),
-    error = function(e) character(0)
-  )
+  simplified_models <- simplified_models_list
 
   use_simplified_logic <- conversation_model %in% simplified_models
 
@@ -217,7 +212,4 @@ get_assistant_response <- function() {
 
   response_text
 }
-
-# Helper %||%
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x
 

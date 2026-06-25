@@ -76,6 +76,3 @@ validate_replacement_target <- function(context) {
 
   list(ok = TRUE, message = "Selection verified.")
 }
-
-# Helper %||%
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x

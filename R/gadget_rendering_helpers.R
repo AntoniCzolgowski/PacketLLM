@@ -383,6 +383,3 @@ render_staged_attachments_list_ui <- function(staged_files) {
     }
   })
 }
-
-# Helper %||%
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x

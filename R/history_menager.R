@@ -534,6 +534,3 @@ get_active_conversation_attachments <- function() {
   if (is.null(active_conv)) return(list())
   active_conv$attachments %||% list()
 }
-
-# Helper %||%
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x

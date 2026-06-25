@@ -95,11 +95,11 @@ read_file_content <- function(file_path, pages = NULL) {
       if (!is.numeric(pages)) {
         stop("The 'pages' parameter must be a numeric vector.")
       }
-      pages <- as.integer(pages) # Ensure integer pages
-      pages <- pages[pages > 0] # Ensure positive pages
-      if(length(pages) == 0 && !is.null(attr(pages,"orig_length")) && attr(pages,"orig_length") > 0){
+      pages <- as.integer(pages)
+      pages <- pages[pages > 0]
+      if (length(pages) == 0) {
         warning("No valid positive page numbers provided in 'pages' parameter.")
-        return("") # Return empty if only invalid pages requested
+        return("")
       }
       valid_pages <- pages[pages <= length(pages_text)]
       if(length(valid_pages) == 0 && length(pages) > 0){

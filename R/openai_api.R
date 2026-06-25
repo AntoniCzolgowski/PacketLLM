@@ -165,6 +165,3 @@ normalize_choice <- function(value, choices, default) {
   }
   value
 }
-
-# Helper %||%
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x
