@@ -8,6 +8,14 @@ test_that("model presets expose expected current choices", {
   expect_equal(PacketLLM::available_openai_models, presets$model)
 })
 
+test_that("model preset choices pair preset name with model id", {
+  choices <- PacketLLM:::model_preset_choices()
+
+  expect_equal(unname(choices), c("gpt-5.5", "gpt-5.4", "gpt-5.4-mini"))
+  expect_true(all(grepl("gpt-5", names(choices))))
+  expect_true(any(grepl("^Best", names(choices))))
+})
+
 test_that("default settings are valid", {
   defaults <- PacketLLM:::default_model_settings()
 

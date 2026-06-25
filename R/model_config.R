@@ -27,7 +27,8 @@ simplified_models_list <- character(0)
 
 model_preset_choices <- function() {
   presets <- available_model_presets()
-  stats::setNames(presets$model, presets$preset)
+  labels <- paste0(presets$preset, " \u2014 ", presets$model)
+  stats::setNames(presets$model, labels)
 }
 
 model_preset_label <- function(model) {
