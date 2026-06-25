@@ -4,6 +4,8 @@
 ^README\.Rmd$
 ^README\.html$
 ^AGENTS\.md$
+^CLAUDE\.md$
+^\.claude$
 ^doc$
 ^Meta$
 ^CRAN-SUBMISSION$
