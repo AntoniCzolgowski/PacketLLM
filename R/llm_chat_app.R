@@ -33,6 +33,7 @@ run_llm_chat_app <- function() {
         ),
         tags$div(
           class = "packet-topbar-actions",
+          actionButton("help_btn", "Help", class = "packet-topbar-btn", title = "How PacketLLM works"),
           actionButton("advanced_settings_btn", "Settings", class = "packet-topbar-btn"),
           actionButton("new_chat_btn", "New chat", class = "packet-topbar-btn packet-topbar-primary"),
           actionButton("close_app_btn", "Close", class = "packet-topbar-btn")
@@ -185,7 +186,15 @@ run_llm_chat_app <- function() {
       first_tab_created(TRUE)
       set_active_conversation(initial_conv_id)
       active_conv_id_rv(initial_conv_id)
+      if (!onboarding_seen()) {
+        showModal(packetllm_help_modal())
+        mark_onboarding_seen()
+      }
     }, once = TRUE, ignoreInit = FALSE)
+
+    observeEvent(input$help_btn, {
+      showModal(packetllm_help_modal())
+    })
 
     observeEvent(input$chatTabs, {
       req(first_tab_created(), input$chatTabs)
@@ -509,6 +518,92 @@ scroll_active_chat <- function() {
       setTimeout(function() { el.scrollTop(el[0].scrollHeight); }, 80);
     }
   ")
+}
+
+packetllm_help_modal <- function() {
+  modalDialog(
+    title = "Getting started with PacketLLM",
+    tags$div(
+      class = "packet-help",
+      tags$p(
+        class = "packet-help-intro",
+        "PacketLLM is an AI assistant for your RStudio work. Here is what the main actions do."
+      ),
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Insert and Replace"),
+        tags$ul(
+          tags$li(
+            tags$strong("Insert"),
+            " adds the suggested code at your cursor position in the active source editor."
+          ),
+          tags$li(
+            tags$strong("Replace"),
+            paste(
+              " swaps your current editor selection for the suggested code.",
+              "A preview opens first, showing the current selection and the replacement",
+              "side by side. PacketLLM also re-checks that your selection still matches",
+              "what it captured; if it changed, you are asked to refresh before replacing."
+            )
+          )
+        )
+      ),
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Context modes"),
+        tags$p("The Context selector controls what PacketLLM sees from RStudio:"),
+        tags$ul(
+          tags$li(tags$strong("Auto"), " uses your selection when you have one, otherwise the active file, then project metadata."),
+          tags$li(tags$strong("Focused"), " uses only the current selection or the active file."),
+          tags$li(tags$strong("Project"), " uses the active file plus package metadata and the project file list."),
+          tags$li(tags$strong("None"), " sends no editor context.")
+        ),
+        tags$p("Context refreshes automatically as you select text or switch files in the editor.")
+      ),
+      tags$div(
+        class = "packet-help-section",
+        tags$h4("Your chats are kept"),
+        tags$p(
+          paste(
+            "You can close the gadget and reopen it during the same RStudio session;",
+            "your conversations and settings are remembered, and they are restored",
+            "the next time you launch PacketLLM as well."
+          )
+        )
+      ),
+      tags$p(
+        class = "packet-help-foot",
+        "You can reopen this guide any time with the Help button."
+      )
+    ),
+    footer = modalButton("Got it"),
+    easyClose = TRUE,
+    size = "l"
+  )
+}
+
+onboarding_marker_path <- function() {
+  override <- getOption("PacketLLM.onboarding_path", default = NULL)
+  if (!is.null(override) && nzchar(override)) {
+    return(override)
+  }
+  data_dir <- tools::R_user_dir("PacketLLM", "data")
+  if (!dir.exists(data_dir)) {
+    dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  file.path(data_dir, "onboarding-seen")
+}
+
+onboarding_seen <- function() {
+  file.exists(onboarding_marker_path())
+}
+
+mark_onboarding_seen <- function() {
+  tryCatch(
+    writeLines(format(Sys.time()), onboarding_marker_path()),
+    error = function(e) NULL
+  )
+  invisible(NULL)
 }
 
 replace_preview_modal <- function(replacement_text, context) {
@@ -889,6 +984,13 @@ packetllm_styles <- function() {
       box-shadow: none;
     }
     .packet-input-row .packet-primary-btn { min-width: 74px; }
+    .packet-help-intro { margin-bottom: 12px; }
+    .packet-help-section { margin-bottom: 14px; }
+    .packet-help-section h4 { margin: 0 0 6px; font-size: 14px; font-weight: 650; color: var(--packet-text); }
+    .packet-help-section ul { margin: 0 0 0 18px; padding-left: 0; }
+    .packet-help-section li { margin: 4px 0; line-height: 1.45; }
+    .packet-help-section p { margin: 0 0 6px; }
+    .packet-help-foot { color: var(--packet-muted); font-size: 12px; margin-top: 4px; }
     .packet-settings-group { margin-bottom: 12px; }
     .packet-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media (max-width: 700px) {

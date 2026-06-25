@@ -85,6 +85,19 @@ test_that("code cards expose replace when a selection target exists", {
   expect_true(grepl(">Replace</button>", rendered$html, fixed = TRUE))
 })
 
+test_that("help modal explains the key actions and persistence", {
+  rendered <- htmltools::renderTags(PacketLLM:::packetllm_help_modal())
+  html <- rendered$html
+
+  expect_true(grepl("Insert and Replace", html, fixed = TRUE))
+  expect_true(grepl("Context modes", html, fixed = TRUE))
+  expect_true(grepl("Auto", html, fixed = TRUE))
+  expect_true(grepl("Focused", html, fixed = TRUE))
+  expect_true(grepl("Project", html, fixed = TRUE))
+  expect_true(grepl("None", html, fixed = TRUE))
+  expect_true(grepl("remembered", html, fixed = TRUE))
+})
+
 test_that("replace preview modal shows current and replacement code", {
   context <- list(path = "R/example.R", selection_text = "x <- 1")
   rendered <- htmltools::renderTags(PacketLLM:::replace_preview_modal("x <- 2", context))
