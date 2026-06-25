@@ -44,6 +44,24 @@ test_that("context signatures change when selected text changes", {
   expect_false(identical(PacketLLM:::context_signature(context_a), PacketLLM:::context_signature(context_b)))
 })
 
+test_that("assistant label uses the accent modifier class", {
+  rendered <- htmltools::renderTags(PacketLLM:::render_message_card(
+    list(role = "assistant", content = "Hello"),
+    conv_id = "conv_1"
+  ))
+
+  expect_true(grepl("packet-message-label-assistant", rendered$html, fixed = TRUE))
+})
+
+test_that("user label does not use the assistant accent modifier", {
+  rendered <- htmltools::renderTags(PacketLLM:::render_message_card(
+    list(role = "user", content = "Hello"),
+    conv_id = "conv_1"
+  ))
+
+  expect_false(grepl("packet-message-label-assistant", rendered$html, fixed = TRUE))
+})
+
 test_that("markdown renderer formats common markdown safely", {
   rendered <- htmltools::renderTags(PacketLLM:::render_markdown_blocks("## Title\n\n- **bold** item\n\n`x <- 1`\n\n<script>alert(1)</script>"))
   html <- rendered$html

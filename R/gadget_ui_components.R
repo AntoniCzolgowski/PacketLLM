@@ -8,6 +8,7 @@ create_tab_content_ui <- function(conv_id) {
       class = "packet-context-row",
       tags$div(
         class = "packet-context-controls",
+        tags$span(class = "packet-context-caption", "Context:"),
         selectInput(
           ns("context_mode"),
           label = NULL,

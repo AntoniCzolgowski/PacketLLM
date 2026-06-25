@@ -677,6 +677,7 @@ packetllm_styles <- function() {
       background: #fbfcfd;
     }
     .packet-context-controls { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .packet-context-caption { color: var(--packet-muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
     .packet-context-controls .form-group { margin: 0; }
     .packet-context-controls select { height: 32px; font-size: 13px; padding: 4px 8px; }
     .packet-icon-btn { padding: 8px 9px; color: var(--packet-muted); }
@@ -716,6 +717,7 @@ packetllm_styles <- function() {
       font-weight: 650;
       color: var(--packet-muted);
     }
+    .packet-message-label-assistant { color: var(--packet-accent); }
     .packet-message-body { padding: 10px; }
     .packet-prewrap { white-space: pre-wrap; overflow-wrap: anywhere; }
     .packet-text-block { margin-bottom: 8px; line-height: 1.45; }

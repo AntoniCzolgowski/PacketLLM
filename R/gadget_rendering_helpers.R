@@ -36,12 +36,17 @@ render_message_card <- function(msg, conv_id = NULL, context = NULL) {
 
   message_class <- if (identical(role_display, "user")) "packet-message-user" else "packet-message-assistant"
   label <- if (identical(role_display, "user")) "You" else "PacketLLM"
+  label_class <- if (identical(role_display, "assistant")) {
+    "packet-message-label packet-message-label-assistant"
+  } else {
+    "packet-message-label"
+  }
   blocks <- if (identical(role_display, "assistant")) split_response_blocks(content_display) else list(list(type = "text", content = content_display))
   action_state <- editor_action_state(context)
 
   tags$div(
     class = paste("packet-message", message_class),
-    tags$div(class = "packet-message-label", label),
+    tags$div(class = label_class, label),
     tags$div(
       class = "packet-message-body",
       tagList(lapply(blocks, function(block) {
