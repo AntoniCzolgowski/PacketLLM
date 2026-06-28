@@ -13,14 +13,20 @@ read_file_content(file_path, pages = NULL)
 }
 \value{
 A character string containing the file content, with pages separated by
-double newlines for PDF files. Stops with an error if the file does not
+double newlines for PDF files and CSV data rendered as a Markdown table.
+Stops with an error if the file does not
 exist, the format is unsupported, or required packages (\code{pdftools} for PDF,
 \code{readtext} for DOCX) are not installed or if \code{pages} is not numeric when provided.
 }
 \description{
-This function reads the content of a file with the extension .R, .pdf, or .docx
-and returns it as a single character string. TXT files are also supported.
+This function reads the content of a file with the extension .R, .pdf, .docx,
+.txt, or .csv and returns it as a single character string.
 For PDF files, if the \code{pages} parameter is provided, only the selected pages will be read.
+For CSV files, the data is converted into a compact, model-friendly Markdown
+representation: a short header with the dimensions, a list of columns with
+their inferred types, and the rows rendered as a Markdown table. The field
+delimiter is detected automatically (comma, semicolon, tab, or pipe), and
+large files are truncated to the first 1000 rows with an explicit note.
 }
 \examples{
 # --- Example for reading an R file ---
@@ -41,6 +47,13 @@ writeLines(c("Line one.", "Second line."), temp_txt_file)
 txt_content <- tryCatch(read_file_content(temp_txt_file), error = function(e) e$message)
 print(txt_content)
 unlink(temp_txt_file)
+
+# --- Example for reading a CSV file ---
+temp_csv_file <- tempfile(fileext = ".csv")
+write.csv(head(mtcars, 3), temp_csv_file, row.names = FALSE)
+csv_content <- tryCatch(read_file_content(temp_csv_file), error = function(e) e$message)
+cat(csv_content)
+unlink(temp_csv_file)
 
 # --- Example for PDF (requires pdftools, only run if installed) ---
 \dontrun{

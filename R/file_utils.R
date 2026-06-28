@@ -1,16 +1,216 @@
 # file_utils.R
 
+# ---------------------------------------------------------------------------
+# Internal CSV helpers
+#
+# These convert a CSV file into a compact, LLM-friendly text representation.
+# The representation follows common practice for feeding tabular data to large
+# language models: a short metadata header (dimensions), an explicit column
+# schema with inferred types, and the data rendered as a Markdown table.
+# Markdown tables are the tabular format current models parse most reliably,
+# and the schema/dimensions give the model grounding about the full dataset
+# even when the body is truncated.
+# ---------------------------------------------------------------------------
+
+# Count non-overlapping occurrences of a fixed single-character string.
+.count_char <- function(line, ch) {
+  m <- gregexpr(ch, line, fixed = TRUE)[[1]]
+  if (length(m) == 1L && m[1] == -1L) 0L else length(m)
+}
+
+# Detect the most likely field delimiter from a sample of raw lines.
+# Considers comma, semicolon, tab, and pipe (the common CSV/TSV delimiters)
+# and prefers the candidate that appears consistently across lines, mirroring
+# the behaviour of dedicated CSV "sniffers".
+.detect_csv_delimiter <- function(lines) {
+  candidates <- c(",", ";", "\t", "|")
+  sample_lines <- lines[nzchar(trimws(lines))]
+  if (length(sample_lines) == 0L) {
+    return(",")
+  }
+  sample_lines <- utils::head(sample_lines, 5L)
+
+  best <- ","
+  best_score <- -1
+  for (d in candidates) {
+    counts <- vapply(sample_lines, .count_char, integer(1), ch = d,
+                     USE.NAMES = FALSE)
+    total <- sum(counts)
+    if (total == 0L) next
+    # Reward consistency: a delimiter that yields the same field count on
+    # every sampled line is far more likely to be the real one.
+    consistent <- length(unique(counts)) == 1L
+    score <- total + if (consistent) 1000L else 0L
+    if (score > best_score) {
+      best_score <- score
+      best <- d
+    }
+  }
+  best
+}
+
+# Map an R column class to a short, human/LLM-friendly type label.
+.friendly_col_type <- function(cls) {
+  switch(cls,
+    integer = "integer",
+    numeric = "numeric",
+    double = "numeric",
+    logical = "logical",
+    character = "text",
+    factor = "text",
+    Date = "date",
+    cls
+  )
+}
+
+# Escape a character vector for safe inclusion in a Markdown table cell:
+# replace NA with empty, collapse newlines, and escape pipe characters.
+.escape_md_cell <- function(x) {
+  x <- as.character(x)
+  x[is.na(x)] <- ""
+  x <- gsub("\r\n|\r|\n", " ", x)
+  x <- gsub("|", "\\|", x, fixed = TRUE)
+  x
+}
+
+# Truncate over-long cell values so a single huge field cannot dominate the
+# context window.
+.truncate_cell <- function(x, max_chars) {
+  too_long <- !is.na(x) & nchar(x) > max_chars
+  x[too_long] <- paste0(substr(x[too_long], 1L, max_chars), "...")
+  x
+}
+
+# Convert a CSV file into a Markdown representation suitable for an LLM.
+#
+# @param file_path Path to the CSV file.
+# @param max_rows Maximum number of data rows to include in the table body.
+#   Larger files are truncated with an explicit note.
+# @param max_cell_chars Maximum number of characters kept per cell.
+# @return A single character string.
+.format_csv_as_markdown <- function(file_path, max_rows = 1000L,
+                                     max_cell_chars = 256L) {
+  raw_lines <- readLines(file_path, warn = FALSE, n = 50L)
+  if (length(raw_lines) == 0L || !any(nzchar(trimws(raw_lines)))) {
+    return("(empty CSV file)")
+  }
+
+  delim <- .detect_csv_delimiter(raw_lines)
+  # Semicolon-delimited files frequently use a comma as the decimal mark
+  # (common European convention), so mirror utils::read.csv2 in that case.
+  dec <- if (identical(delim, ";")) "," else "."
+
+  df <- tryCatch(
+    utils::read.csv(
+      file_path,
+      sep = delim,
+      dec = dec,
+      header = TRUE,
+      stringsAsFactors = FALSE,
+      check.names = FALSE,
+      na.strings = c("NA", ""),
+      strip.white = TRUE,
+      fileEncoding = "UTF-8",
+      encoding = "UTF-8"
+    ),
+    error = function(e) e
+  )
+  # Retry without forcing an encoding if the strict UTF-8 read failed.
+  if (inherits(df, "error")) {
+    df <- tryCatch(
+      utils::read.csv(
+        file_path,
+        sep = delim,
+        dec = dec,
+        header = TRUE,
+        stringsAsFactors = FALSE,
+        check.names = FALSE,
+        na.strings = c("NA", ""),
+        strip.white = TRUE
+      ),
+      error = function(e) {
+        stop("Failed to parse CSV file '", file_path, "': ", e$message)
+      }
+    )
+  }
+
+  if (!is.data.frame(df)) {
+    stop("Failed to parse CSV file '", file_path, "' into a table.")
+  }
+
+  n_rows <- nrow(df)
+  n_cols <- ncol(df)
+
+  if (n_cols == 0L) {
+    return("(CSV file contains no columns)")
+  }
+
+  col_names <- names(df)
+  col_types <- vapply(df, function(col) .friendly_col_type(class(col)[1]),
+                      character(1), USE.NAMES = FALSE)
+
+  header_lines <- c(
+    sprintf("This is the content of a CSV data file with %d row%s and %d column%s.",
+            n_rows, if (n_rows == 1L) "" else "s",
+            n_cols, if (n_cols == 1L) "" else "s"),
+    "",
+    "Columns:",
+    paste0("- ", .escape_md_cell(col_names), " (", col_types, ")"),
+    ""
+  )
+
+  display_df <- df
+  truncated_rows <- 0L
+  if (n_rows > max_rows) {
+    display_df <- df[seq_len(max_rows), , drop = FALSE]
+    truncated_rows <- n_rows - max_rows
+  }
+
+  esc_names <- .escape_md_cell(col_names)
+  table_header <- paste0("| ", paste(esc_names, collapse = " | "), " |")
+  table_sep <- paste0("| ", paste(rep("---", n_cols), collapse = " | "), " |")
+
+  if (nrow(display_df) > 0L) {
+    char_cols <- lapply(display_df, function(col) {
+      .truncate_cell(.escape_md_cell(col), max_cell_chars)
+    })
+    mat <- do.call(cbind, char_cols)
+    body <- apply(mat, 1L, function(r) paste0("| ", paste(r, collapse = " | "), " |"))
+  } else {
+    body <- character(0)
+  }
+
+  table_lines <- c(table_header, table_sep, body)
+
+  if (truncated_rows > 0L) {
+    table_lines <- c(
+      table_lines,
+      "",
+      sprintf("(... %d more row%s not shown; table truncated to the first %d rows)",
+              truncated_rows, if (truncated_rows == 1L) "" else "s", max_rows)
+    )
+  }
+
+  paste(c(header_lines, table_lines), collapse = "\n")
+}
+
 #' Read file content
 #'
-#' This function reads the content of a file with the extension .R, .pdf, or .docx
-#' and returns it as a single character string. TXT files are also supported.
+#' This function reads the content of a file with the extension .R, .pdf, .docx,
+#' .txt, or .csv and returns it as a single character string.
 #' For PDF files, if the `pages` parameter is provided, only the selected pages will be read.
+#' For CSV files, the data is converted into a compact, model-friendly Markdown
+#' representation: a short header with the dimensions, a list of columns with
+#' their inferred types, and the rows rendered as a Markdown table. The field
+#' delimiter is detected automatically (comma, semicolon, tab, or pipe), and
+#' large files are truncated to the first 1000 rows with an explicit note.
 #'
 #' @param file_path Character string. Path to the file.
 #' @param pages Optional. A numeric vector specifying which pages (for PDF) should be read.
 #'
 #' @return A character string containing the file content, with pages separated by
-#'         double newlines for PDF files. Stops with an error if the file does not
+#'         double newlines for PDF files and CSV data rendered as a Markdown table.
+#'         Stops with an error if the file does not
 #'         exist, the format is unsupported, or required packages (`pdftools` for PDF,
 #'         `readtext` for DOCX) are not installed or if `pages` is not numeric when provided.
 #' @export
@@ -33,6 +233,13 @@
 #' txt_content <- tryCatch(read_file_content(temp_txt_file), error = function(e) e$message)
 #' print(txt_content)
 #' unlink(temp_txt_file)
+#'
+#' # --- Example for reading a CSV file ---
+#' temp_csv_file <- tempfile(fileext = ".csv")
+#' write.csv(head(mtcars, 3), temp_csv_file, row.names = FALSE)
+#' csv_content <- tryCatch(read_file_content(temp_csv_file), error = function(e) e$message)
+#' cat(csv_content)
+#' unlink(temp_csv_file)
 #'
 #' # --- Example for PDF (requires pdftools, only run if installed) ---
 #' \dontrun{
@@ -133,11 +340,16 @@ read_file_content <- function(file_path, pages = NULL) {
     }
     return(doc$text[1])
 
+  } else if (ext == "csv") {
+    # Convert tabular data into an LLM-friendly Markdown representation
+    # (metadata header + column schema + Markdown table).
+    return(.format_csv_as_markdown(file_path))
+
   } else if (ext == "txt") { # Explicitly handle TXT
     lines <- readLines(file_path, warn = FALSE)
     return(paste(lines, collapse = "\n"))
   } else {
-    stop("Unsupported file format: '", ext, "'. Supported formats are R, PDF, DOCX, TXT.")
+    stop("Unsupported file format: '", ext, "'. Supported formats are R, PDF, DOCX, TXT, CSV.")
   }
 }
 

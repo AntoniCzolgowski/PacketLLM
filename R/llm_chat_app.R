@@ -563,7 +563,7 @@ packetllm_help_modal <- function() {
         tags$h4("Attaching files"),
         tags$p(
           "Click", tags$strong("Attach"), "to add a file as context before sending.",
-          "Supported: .R, .pdf, .docx, .txt."
+          "Supported: .R, .pdf, .docx, .txt, .csv."
         ),
         tags$p(
           "Attached files are included in every subsequent message in the conversation.",

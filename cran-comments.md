@@ -1,15 +1,13 @@
 ## Submission
 
-This is a resubmission of PacketLLM as version 0.1.2.
+This is a resubmission of PacketLLM as version 0.1.3.
 
-### Changes since 0.1.1
+### Changes since 0.1.2
 
-* Add onboarding help modal and reopenable Help button.
-* Add automatic editor context polling (replaces manual refresh).
-* Fix custom instruction being silently ignored when behavior preset was not Custom.
-* Show model ID alongside preset name in the selector.
-* Consolidate internal helper; remove reflective `getFromNamespace` lookup.
-* Fix vignette `install.packages()` call; add `usethis` and `remotes` to Suggests.
+* Add support for attaching `.csv` files. CSV data is converted into a model-friendly representation (dimensions header, column schema with inferred types, and the rows as a Markdown table).
+* Detect the CSV field delimiter automatically (comma, semicolon, tab, or pipe) and handle semicolon files with comma decimal marks.
+* Truncate large CSV files to the first 1000 rows with an explicit note and shorten over-long cell values.
+* Update README, vignette, and in-app help to list `.csv` as a supported attachment format.
 
 ### R CMD check results
 

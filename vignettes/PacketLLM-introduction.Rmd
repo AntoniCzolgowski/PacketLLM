@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 With PacketLLM, you can:
 - Generate code and explanations.
-- Analyze text from uploaded files (.R, .pdf, .docx).
+- Analyze text and tabular data from uploaded files (.R, .pdf, .docx, .txt, .csv).
 - Manage multiple conversations in tabs.
 - Customize model behavior through settings.
 
@@ -106,7 +106,7 @@ The PacketLLM interface consists of:
   Displays the dialogue between you and the AI.
 
 - **Input Area:**
-  - *+ Button:* Open a file browser to attach supported files (.R, .pdf, .docx) as context.
+  - *+ Button:* Open a file browser to attach supported files (.R, .pdf, .docx, .txt, .csv) as context.
   - *Attachments Staging Area:* Lists selected files pending for upload.
   - *Text Input Box:* Where you type your message.
   - *Send Button:* Send your message and any attached files to the model.

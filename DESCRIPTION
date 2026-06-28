@@ -1,6 +1,6 @@
 Package: PacketLLM
 Title: AI Assistant Gadget for 'RStudio'
-Version: 0.1.2
+Version: 0.1.3
 Authors@R: 
     person("Antoni", "Czolgowski", email = "antoni.czolgowski@gmail.com", role = c("aut", "cre"))
 Description: Provides an interactive 'RStudio' gadget for working with an AI

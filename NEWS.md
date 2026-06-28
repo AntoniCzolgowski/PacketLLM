@@ -1,3 +1,10 @@
+# PacketLLM 0.1.3
+
+* Attachments: add support for `.csv` files. CSV data is converted into a model-friendly representation consisting of a dimensions header, a column schema with inferred types, and the rows rendered as a Markdown table.
+* Attachments: the CSV field delimiter is detected automatically (comma, semicolon, tab, or pipe), and semicolon files with comma decimal marks are handled.
+* Attachments: large CSV files are truncated to the first 1000 rows with an explicit note; over-long cell values are shortened.
+* Docs: update README, vignette, and the in-app help to list `.csv` as a supported attachment format.
+
 # PacketLLM 0.1.2
 
 * UI: add onboarding help modal (shown once on first launch, reopenable via Help button) covering context modes, editor actions, settings, and persistence.

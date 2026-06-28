@@ -81,9 +81,13 @@ locked after that to keep the context consistent.
 
 **File attachments**
 
-Attach `.R`, `.pdf`, `.docx`, or `.txt` files as additional context.
-Attached files are stored in the conversation and included in every
-subsequent message.
+Attach `.R`, `.pdf`, `.docx`, `.txt`, or `.csv` files as additional
+context. Attached files are stored in the conversation and included in
+every subsequent message. CSV files are converted into a model-friendly
+form: a header with the dimensions, a column schema with inferred types,
+and the rows rendered as a Markdown table (the field delimiter is
+detected automatically and large files are truncated to the first 1000
+rows).
 
 **Safe rendering**
 
